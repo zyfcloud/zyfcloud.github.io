@@ -8,12 +8,12 @@
     <language>en-us</language>
     <lastBuildDate>Wed, 05 May 2021 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>First</title>
+      <title>gin和http包的使用</title>
       <link>https://zhuyunfeng111.github.io/post/first/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
       <guid>https://zhuyunfeng111.github.io/post/first/</guid>
-      <description></description>
+      <description>gin，beego等底层都用的是net/http模块，上篇文章中对一个基本的http请求作了分析，这篇文章就gin怎么用的http模块的流程进行梳理。</description>
     </item>
     
   </channel>
