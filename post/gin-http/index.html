@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html  dir="ltr" lang="en" data-theme=""><head>
+    <title> zyfcloud | gin和http包的使用 </title>
+
+    
+    <meta charset="utf-8"><meta name="generator" content="Hugo 0.81.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="description" content="gin，beego等底层都用的是net/http模块，上篇文章中对一个基本的http请求作了分析，这篇文章就gin怎么用的http模块的流程进行梳理。">
+    
+    
+    
+    <link rel="stylesheet"
+        href="/css/style.min.51d7ec6db610dce512b735d5315f963c278042d026aa4ebe05a9355460b49016.css"
+        integrity="sha256-UdfsbbYQ3OUStzXVMV&#43;WPCeAQtAmqk6&#43;Bak1VGC0kBY="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    
+    <link rel="stylesheet"
+        href="/css/markupHighlight.min.f798cbda9aaa38f89eb38be6414bd082cfd71a6780375cbf67b6d2fb2b96491e.css"
+        integrity="sha256-95jL2pqqOPies4vmQUvQgs/XGmeAN1y/Z7bS&#43;yuWSR4="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    <link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" 
+    integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" 
+    crossorigin="anonymous" />
+
+    
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+    <link rel="canonical" href="/post/gin-http/">
+
+    
+    
+    
+    
+    <script type="text/javascript"
+            src="/js/anatole-header.min.0c05c0a90d28c968a1cad4fb31abd0b8e1264e788ccefed022ae1d3b6f627514.js"
+            integrity="sha256-DAXAqQ0oyWihytT7MavQuOEmTniMzv7QIq4dO29idRQ="
+            crossorigin="anonymous"></script>
+
+
+    
+        
+        
+        <script type="text/javascript"
+                src="/js/anatole-theme-switcher.min.7fd87181cdd7e8413aa64b6867bb32f3a8dc242e684fc7d5bbb9f600dbc2b6eb.js"
+                integrity="sha256-f9hxgc3X6EE6pktoZ7sy86jcJC5oT8fVu7n2ANvCtus="
+                crossorigin="anonymous"></script>
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="gin和http包的使用"/>
+<meta name="twitter:description" content="gin，beego等底层都用的是net/http模块，上篇文章中对一个基本的http请求作了分析，这篇文章就gin怎么用的http模块的流程进行梳理。"/>
+
+
+    
+
+</head>
+<body><div class="sidebar animated fadeInDown ">
+    <div class="logo-title">
+        <div class="title">
+            <img src="/images/profile.png" alt="profile picture">
+            <h3 title=""><a href="/">ZYF-CLOUD</a></h3>
+            <div class="description">
+                <p>some sharing</p>
+            </div>
+        </div>
+    </div>
+    <ul class="social-links">
+        
+    </ul>
+    <div class="footer">
+        <div class="by_farbox">&copy; zyfcloud  2021 </div>
+    </div>
+</div>
+<div class="main">
+    <div class="page-top  animated fadeInDown ">
+    <a role="button" class="navbar-burger" data-target="navMenu" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+    </a>
+    <ul class="nav" id="navMenu">
+        
+        
+            
+            <li><a 
+                   href="/"
+                        
+                   title="">Home</a></li>
+        
+            
+            <li><a 
+                   href="/post/"
+                        
+                   title="">Posts</a></li>
+        
+            
+            <li><a 
+                   href="/about/"
+                        
+                   title="">About</a></li>
+        
+        
+        
+            <li class="theme-switch-item">
+                <a class="theme-switch" title="Switch Theme">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+    <div class="autopagerize_page_element">
+        <div class="content">
+    <div class="post  animated fadeInDown ">
+        <div class="post-content">
+            
+            <div class="post-title">
+                <h3>gin和http包的使用</h3>
+                
+                    <div class="info">
+                        <em class="fas fa-calendar-day"></em>
+                        <span class="date"> Wed, May 5, 2021 
+                                           </span>
+                        <em class="fas fa-stopwatch"></em>
+                        <span class="reading-time">5-minute read</span>
+                    </div>
+                
+            </div>
+
+            <p>gin，beego等底层都用的是net/http模块，上篇文章中对一个基本的http请求作了分析，这篇文章就gin怎么用的http模块的流程进行梳理。</p>
+<h4 id="一个基本的gin项目代码">一个基本的gin项目代码：</h4>
+<pre><code>package main
+import &quot;github.com/gin-gonic/gin&quot;
+func main() {
+	r := gin.Default()
+	r.GET(&quot;/ping&quot;, func(c *gin.Context) {
+		c.JSON(200, gin.H{&quot;message&quot;: &quot;pong&quot;,})
+	})
+	r.Run() // listen and serve on 0.0.0.0:8080 (for windows &quot;localhost:8080&quot;)
+}
+</code></pre><p>可以看到一个基本的启动过程：
+（1）首先生成一个gin.Default
+（2）设置路由r.GET&hellip;
+（3）启动listen and serve
+例行先提出问题：
+（q1）gin是怎么使用到net/http的模块的？
+（q2）gin的路由处理流程？
+通过每个流程的分析来解答：
+####一、gin.Default</p>
+<pre><code>// Default returns an Engine instance with the Logger and Recovery middleware already attached.
+func Default() *Engine {
+	debugPrintWARNINGDefault()        // go版本的校验（&gt;1.8.x）,debugPrint,debug模式的时候会有相关打印
+	engine := New()              // 生成一个Engine结构体
+	engine.Use(Logger(), Recovery())        // 用了Logger和Recovery两个middleware，同时也可以自己定义middleware
+	return engine        // 返回结构体
+}
+</code></pre><p>#####1.1 debugPrintWARNINGDefault：
+关于版本的校验等信息，debug模式下的启动日志打印</p>
+<pre><code>func debugPrintWARNINGDefault() {
+	if v, e := getMinVer(runtime.Version()); e == nil &amp;&amp; v &lt;= ginSupportMinGoVer {                          //  版本的校验，不能小于1.8
+		debugPrint(`[WARNING] Now Gin requires Go 1.8 or later and Go 1.9 will be required soon.
+`)}
+	debugPrint(`[WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+`)
+}
+func getMinVer(v string) (uint64, error) {
+	first := strings.IndexByte(v, '.')
+	last := strings.LastIndexByte(v, '.')
+	fmt.Println(first)
+	fmt.Println(last)
+	if first == last {
+		return strconv.ParseUint(v[first+1:], 10, 64)
+	}
+	return strconv.ParseUint(v[first+1:last], 10, 64)
+}
+</code></pre><p>#####1.2 engine := New()
+New函数用于生成一个新的Engine结构体，可以看到各种参数配置
+首先我们来关注Engine结构体的几个参数：
+（1）RouterGroup：RouterGroup 描述的一个路由组，其中包含了这个路由组的相关公共属性，比如后面可以通过(group *RouterGroup) Group方法修改basePath字段，用于加一些公共的路由前缀(eg:&ldquo;api/v1&rdquo;)，。通过(group *RouterGroup) Use(middleware &hellip;HandlerFunc)方法改变Handlers字段，用于添加公共的中间件。
+贴一段项目代码：</p>
+<pre><code>// InsecureRouterGroup returns router group without auth
+func InsecureRouterGroup() *gin.RouterGroup {
+	lock.Lock()
+	r := gEngine.Group(constants.APIVERSION)
+	r.Use(RequestID)
+	lock.Unlock()
+	return r
+}
+</code></pre><p>（2）各种bool参数，用于对重定向（redirect），转发（ForwardedByClientIP）等一些属性的控制
+（3）trees：类型为methodTrees，是每个不同方法的路由集合，原理参考go的http/router框架。大致就是一个路由查找树，用到了radix tree(前缀树）或者说是压缩检索树的数据结构，来进行路由匹配，可以大大的提高路由查找的效率。</p>
+<pre><code>type methodTrees []methodTree
+type methodTree struct {
+	method string
+	root   *node
+}
+type node struct {
+	path      string              // 当前节点的对应的子查找路径
+	indices   string              // 子节点的首字母的组成的字符串
+	children  []*node            // 子节点
+	handlers  HandlersChain     // 这个node对应要处理的Handlers
+	priority  uint32
+	nType     nodeType      // 当前节点类型（eg: root(根节点)/default(普通的)/param(参数类型)/catchAll(通配符)）
+	maxParams uint8
+	wildChild bool        // 当前节点的子节点是否是参数节点
+}
+</code></pre><p>（4）pool：sync.Pool类型，New方法定义为return engine.allocateContext()，返回的结构体是gin.Context结构体，便于对结构体的复用，减少gc。
+抛出问题
+（qa6）：gin.Context结构体在哪里被用到的？具体的代码处理逻辑？</p>
+<pre><code>func New() *Engine {
+	debugPrintWARNINGNew()
+	engine := &amp;Engine{
+		RouterGroup: RouterGroup{
+			Handlers: nil,        // 这个路由组的公共hanlers，后面会给其加上middleware
+			basePath: &quot;/&quot;,      // 路由地址为&quot;/&quot;
+			root:     true,         // 表明这个为根路由
+		},
+		FuncMap:                template.FuncMap{},
+		RedirectTrailingSlash:  true,
+		RedirectFixedPath:      false,
+		HandleMethodNotAllowed: false,
+		ForwardedByClientIP:    true,
+		AppEngine:              defaultAppEngine,
+		UseRawPath:             false,
+		UnescapePathValues:     true,
+		MaxMultipartMemory:     defaultMultipartMemory,
+		trees:                  make(methodTrees, 0, 9),              // 给methodTrees定义一个methodTree的数组
+		delims:                 render.Delims{Left: &quot;{{&quot;, Right: &quot;}}&quot;},
+		secureJsonPrefix:       &quot;while(1);&quot;,
+	}
+	engine.RouterGroup.engine = engine
+	engine.pool.New = func() interface{} {
+		return engine.allocateContext()
+	}
+	return engine
+}
+</code></pre><p>抛出问题：
+（q3）路由查找的时候RouterGroup和trees都是在哪里被用到了？
+#####1.3 engine.Use(Logger(), Recovery())
+这里用了gin的中间件Logger和Recovery</p>
+<pre><code>// Use attaches a global middleware to the router. ie. the middleware attached though Use() will be
+// included in the handlers chain for every single request. Even 404, 405, static files...
+// For example, this is the right place for a logger or error management middleware.
+func (engine *Engine) Use(middleware ...HandlerFunc) IRoutes {
+	engine.RouterGroup.Use(middleware...)        // use中间件，把加入的middleware加入到engine.RouterGroup.Handlers中，在后面加入具体的业务代码的时候会combine这个Handlers和具体的业务handler，解释了(qa3)的问题。
+	engine.rebuild404Handlers()          // 用于重写noroute的handler,具体的方法实现在func (engine *Engine) NoRoute(handlers ...HandlerFunc)中，用于用户自己定义
+	engine.rebuild405Handlers()      // 同上，用于重写nomethod的handler
+	return engine
+}
+// Use adds middleware to the group, see example code in GitHub.
+func (group *RouterGroup) Use(middleware ...HandlerFunc) IRoutes {
+	group.Handlers = append(group.Handlers, middleware...)
+	return group.returnObj()
+}
+</code></pre><p>至此对于gin.Default的代码分析完毕</p>
+<p>####二、r.GET(&quot;/ping&quot;, func(c *gin.Context) {c.JSON(200, gin.H{&ldquo;message&rdquo;:&ldquo;pong&rdquo;,}) })
+先贴源码：</p>
+<pre><code>// GET is a shortcut for router.Handle(&quot;GET&quot;, path, handle).
+func (group *RouterGroup) GET(relativePath string, handlers ...HandlerFunc) IRoutes {
+	return group.handle(&quot;GET&quot;, relativePath, handlers)
+}
+
+func (group *RouterGroup) handle(httpMethod, relativePath string, handlers HandlersChain) IRoutes {
+	absolutePath := group.calculateAbsolutePath(relativePath) // 合并相对路径和routerGroup的basePath
+	handlers = group.combineHandlers(handlers) // 把业务的handler和共用的handler（middleware）结合到一起，返回一个新的HandlersChain
+	group.engine.addRoute(httpMethod, absolutePath, handlers) // 把path加入到相应的method的检索树中去，关联相应的handlers
+	return group.returnObj()
+}
+func (group *RouterGroup) calculateAbsolutePath(relativePath string) string {
+	return joinPaths(group.basePath, relativePath)
+}
+func (group *RouterGroup) combineHandlers(handlers HandlersChain) HandlersChain {
+	finalSize := len(group.Handlers) + len(handlers)
+	if finalSize &gt;= int(abortIndex) {
+		panic(&quot;too many handlers&quot;)
+	}
+	mergedHandlers := make(HandlersChain, finalSize)
+	copy(mergedHandlers, group.Handlers)
+	copy(mergedHandlers[len(group.Handlers):], handlers)
+	return mergedHandlers
+}
+func (engine *Engine) addRoute(method, path string, handlers HandlersChain) {
+	assert1(path[0] == '/', &quot;path must begin with '/'&quot;)
+	assert1(method != &quot;&quot;, &quot;HTTP method can not be empty&quot;)
+	assert1(len(handlers) &gt; 0, &quot;there must be at least one handler&quot;)
+
+	debugPrintRoute(method, path, handlers)
+	root := engine.trees.get(method)      // 查看engine.trees是否已经有了此method，没有的话创建出一个新的method的node
+	if root == nil {
+		root = new(node)
+		engine.trees = append(engine.trees, methodTree{method: method, root: root})
+	}
+	root.addRoute(path, handlers)        // 把handlers加入到method的node中
+}
+</code></pre><p>总结：r.GET方法工作（1）合并拿到绝对路径 （2）将业务handler和middle handler合并为mergeHandler（3）将路径，mergeHandler，method（httprouter的节点相关元素）加入到methodTrees中。
+总的来说处理过程符合httprouter那一套逻辑。
+####三、r.Run()
+现在我们已经有了一个类型为Engine的handler（实现了ServeHTTP的方法），以及一个Engine里的路由检索树已经建立好了。
+抛出问题
+（qa4）：对于进来的请求怎么进行监听的？
+（qa5）：对于路由的匹配是在哪里进行的？</p>
+<pre><code>// Run attaches the router to a http.Server and starts listening and serving HTTP requests.
+// It is a shortcut for http.ListenAndServe(addr, router)
+// Note: this method will block the calling goroutine indefinitely unless an error happens.
+func (engine *Engine) Run(addr ...string) (err error) {
+	defer func() { debugPrintError(err) }()
+	address := resolveAddress(addr)
+	debugPrint(&quot;Listening and serving HTTP on %s\n&quot;, address)
+	err = http.ListenAndServe(address, engine)
+	return
+}
+
+// ListenAndServe listens on the TCP network address addr and then calls
+// Serve with handler to handle requests on incoming connections.
+// Accepted connections are configured to enable TCP keep-alives.
+//
+// The handler is typically nil, in which case the DefaultServeMux is used.
+//
+// ListenAndServe always returns a non-nil error.
+func ListenAndServe(addr string, handler Handler) error {
+	server := &amp;Server{Addr: addr, Handler: handler}
+	return server.ListenAndServe()
+}
+</code></pre><p>可以看到这里的Run即为将engine这个handler放入到http.ListenAndServe中去，然后启用监听。。。。，监听流程和net/http的处理流程一致。（解答了qa4）</p>
+<p>对于qa5：
+首选回顾一下,net/http中的路由查找是怎么执行的吗？看下面的代码，其实发现net/http用的是ServeMux这个handler，也是实现了ServeHTTP这个方法，具体的路由匹配在mux.Handler(r) 中</p>
+<pre><code>func (mux *ServeMux) ServeHTTP(w ResponseWriter, r *Request) {
+    if r.RequestURI == &quot;*&quot; {
+        if r.ProtoAtLeast(1, 1) {
+            w.Header().Set(&quot;Connection&quot;, &quot;close&quot;)
+        }
+        w.WriteHeader(StatusBadRequest)
+        return
+    }
+    h, _ := mux.Handler(r)                  //  handler的路由处理
+    h.ServeHTTP(w, r)                       //  ServeHTTP的实现，对应到用户的业务逻辑处理
+}
+</code></pre><p>而engine即类似于ServeMux，也实现了一个ServeHTTP方法，也是在方法里进行了路由的匹配以及具体逻辑的处理，详细见下面代码。</p>
+<pre><code>// ServeHTTP conforms to the http.Handler interface。
+// 这个方法的实现是在一个goroutine中实现的，就是说每对一个新的HTTP请求，都会生成一个新的goroutine去处理（并发处理详见net/http的处理过程）。
+//对于这个HTTP请求，会先触发ServeHTTP方法得到一个Context请求上下文，然后调用engine.handleHTTPRequest(C)，处理这个请求，同时将处理的内容写入到http.ResponseWriter中。
+func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	c := engine.pool.Get().(*Context)      // 从池子里拿出来，要是没有了的话自己new一个出来。有并发请求进来的时候，会产生多个context
+	c.writermem.reset(w)      // 对context的ResponseWriter赋为w
+	c.Request = req            // 对context的Request赋为req
+	c.reset()        // 对拿到的context进行reset，类似于清空，然后才进行使用
+	engine.handleHTTPRequest(c)      // 这里就是最后的逻辑处理，包括（1）通过context .Request.path找到对应的handler   （2）middleware的执行 （3）业务代码的执行 （4）写入结果到context. ResponseWriter中去
+	engine.pool.Put(c)        // 用完了之后放回到engine.pool中去
+}
+</code></pre><p>注释解释了qa6。
+对于engine.handleHTTPRequest(c)中的处理逻辑，涉及到了middleware的处理，下面拉出来分析一下：</p>
+<pre><code>func (engine *Engine) handleHTTPRequest(c *Context) {
+	httpMethod := c.Request.Method
+	rPath := c.Request.URL.Path
+	unescape := false
+	if engine.UseRawPath &amp;&amp; len(c.Request.URL.RawPath) &gt; 0 {
+		rPath = c.Request.URL.RawPath
+		unescape = engine.UnescapePathValues
+	}
+	rPath = cleanPath(rPath)
+	// Find root of the tree for the given HTTP method
+	t := engine.trees
+	for i, tl := 0, len(t); i &lt; tl; i++ {
+		if t[i].method != httpMethod {         // 遍历methodTrees，找到当前方法的methodTree   
+			continue
+		}
+		root := t[i].root                // 找到methodTree的root
+		// Find route in tree
+		handlers, params, tsr := root.getValue(rPath, c.Params, unescape)        // 拿到当前tree下的这个路径下的handler和参数等
+		if handlers != nil {
+			c.handlers = handlers
+			c.Params = params
+			c.Next()              // 这里是真正的进行handler的执行，包括middleware和业务handle
+			c.writermem.WriteHeaderNow()        // 写入header
+			return  
+		}
+		if httpMethod != &quot;CONNECT&quot; &amp;&amp; rPath != &quot;/&quot; {          // 跨域等操作
+			if tsr &amp;&amp; engine.RedirectTrailingSlash {
+				redirectTrailingSlash(c)
+				return
+			}
+			if engine.RedirectFixedPath &amp;&amp; redirectFixedPath(c, root, engine.RedirectFixedPath) {
+				return
+			}
+		}
+		break
+	}
+	if engine.HandleMethodNotAllowed {
+		for _, tree := range engine.trees {
+			if tree.method == httpMethod {
+				continue
+			}
+			if handlers, _, _ := tree.root.getValue(rPath, nil, unescape); handlers != nil {
+				c.handlers = engine.allNoMethod
+				serveError(c, http.StatusMethodNotAllowed, default405Body)
+				return
+			}
+		}
+	}
+	c.handlers = engine.allNoRoute
+	serveError(c, http.StatusNotFound, default404Body)
+}
+
+// Next should be used only inside middleware.
+// It executes the pending handlers in the chain inside the calling handler.
+// See example in GitHub.
+func (c *Context) Next() {
+	c.index++
+	for c.index &lt; int8(len(c.handlers)) {
+		c.handlers[c.index](c)                        // 会进行递归执行middleware，直到执行到业务代码。一般的middleware会有个c.Next方法。像cors等没有写c.Next的，其实在for c.index &lt; int8(len(c.handlers))遍历中也会被执行到。
+		c.index++
+	}
+}
+</code></pre><p>可以看到在handleHTTPRequest执行过程中，都是通过context结构体进行上下文传递的，传递的内容包括Request，Writer，handlers，Params等等。</p>
+<p>####总结：
+至此可以看到gin作为一个web框架，其实就是重写了原生的ServeMux的实现。Engine就是一个类似于ServeMux的handler。
+基本的web实现的时候，重新实现的逻辑主要有：
+（1）对于路由的查找，用了http/router的路由框架，并在ServeHTTP方法中进行了路由的查找。
+（2）用了中间件的处理逻辑，并在路由添加的时候进行了路由的合并等操作，并且在handleHTTPRequest的时候也会对每个中间件进行处理。
+后面有新的发现进行补充。。。</p>
+</div>
+        <div class="post-footer">
+            <div class="info">
+                <span class="separator"><a class="category" href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">源码分析</a></span>
+                <span class="separator"><a class="tag" href="/tags/go/">go</a><a class="tag" href="/tags/gin/">gin</a></span>
+            </div>
+        </div>
+
+        
+    </div>
+
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript"
+        src="/js/medium-zoom.min.2d6fd0be87fa98f0c9b4dc2536b312bbca48757f584f6ea1f394abc9bcc38fbc.js"
+        integrity="sha256-LW/Qvof6mPDJtNwlNrMSu8pIdX9YT26h85SrybzDj7w="
+        crossorigin="anonymous"></script></body>
+
+</html>

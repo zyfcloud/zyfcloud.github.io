@@ -8,12 +8,21 @@
     <language>en-us</language>
     <lastBuildDate>Wed, 05 May 2021 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>gin和http包的使用</title>
-      <link>https://zhuyunfeng111.github.io/post/first/</link>
+      <title>golang:gin和net/http</title>
+      <link>https://zhuyunfeng111.github.io/post/go-web-gin/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/first/</guid>
-      <description>gin，beego等底层都用的是net/http模块，上篇文章中对一个基本的http请求作了分析，这篇文章就gin怎么用的http模块的流程进行梳理。</description>
+      <guid>https://zhuyunfeng111.github.io/post/go-web-gin/</guid>
+      <description>gin，beego等web框架底层都用的是net/http模块，接上一篇文章，本文就gin怎么用net/http起web服务进行梳理。</description>
+    </item>
+    
+    <item>
+      <title>golang:net/http之web服务源码分析</title>
+      <link>https://zhuyunfeng111.github.io/post/go-web-http/</link>
+      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/post/go-web-http/</guid>
+      <description>本文对go利用net/http包起一个最基本http服务的代码进行分析</description>
     </item>
     
   </channel>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html  dir="ltr" lang="en" data-theme=""><head>
+    <title> zyfcloud | golang:net/http之web服务源码分析 </title>
+
+    
+    <meta charset="utf-8"><meta name="generator" content="Hugo 0.81.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="description" content="本文对go利用net/http包起一个http服务的基本代码分析">
+    
+    
+    
+    <link rel="stylesheet"
+        href="/css/style.min.51d7ec6db610dce512b735d5315f963c278042d026aa4ebe05a9355460b49016.css"
+        integrity="sha256-UdfsbbYQ3OUStzXVMV&#43;WPCeAQtAmqk6&#43;Bak1VGC0kBY="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    
+    <link rel="stylesheet"
+        href="/css/markupHighlight.min.f798cbda9aaa38f89eb38be6414bd082cfd71a6780375cbf67b6d2fb2b96491e.css"
+        integrity="sha256-95jL2pqqOPies4vmQUvQgs/XGmeAN1y/Z7bS&#43;yuWSR4="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    <link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" 
+    integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" 
+    crossorigin="anonymous" />
+
+    
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+    <link rel="canonical" href="/post/go-web-http/">
+
+    
+    
+    
+    
+    <script type="text/javascript"
+            src="/js/anatole-header.min.0c05c0a90d28c968a1cad4fb31abd0b8e1264e788ccefed022ae1d3b6f627514.js"
+            integrity="sha256-DAXAqQ0oyWihytT7MavQuOEmTniMzv7QIq4dO29idRQ="
+            crossorigin="anonymous"></script>
+
+
+    
+        
+        
+        <script type="text/javascript"
+                src="/js/anatole-theme-switcher.min.7fd87181cdd7e8413aa64b6867bb32f3a8dc242e684fc7d5bbb9f600dbc2b6eb.js"
+                integrity="sha256-f9hxgc3X6EE6pktoZ7sy86jcJC5oT8fVu7n2ANvCtus="
+                crossorigin="anonymous"></script>
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="golang:net/http之web服务源码分析"/>
+<meta name="twitter:description" content="本文对go利用net/http包起一个http服务的基本代码分析"/>
+
+
+    
+
+</head>
+<body><div class="sidebar animated fadeInDown ">
+    <div class="logo-title">
+        <div class="title">
+            <img src="/images/profile.png" alt="profile picture">
+            <h3 title=""><a href="/">ZYF-CLOUD</a></h3>
+            <div class="description">
+                <p>some sharing</p>
+            </div>
+        </div>
+    </div>
+    <ul class="social-links">
+        
+    </ul>
+    <div class="footer">
+        <div class="by_farbox">&copy; zyfcloud  2021 </div>
+    </div>
+</div>
+<div class="main">
+    <div class="page-top  animated fadeInDown ">
+    <a role="button" class="navbar-burger" data-target="navMenu" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+    </a>
+    <ul class="nav" id="navMenu">
+        
+        
+            
+            <li><a 
+                   href="/"
+                        
+                   title="">Home</a></li>
+        
+            
+            <li><a 
+                   href="/post/"
+                        
+                   title="">Posts</a></li>
+        
+            
+            <li><a 
+                   href="/about/"
+                        
+                   title="">About</a></li>
+        
+        
+        
+            <li class="theme-switch-item">
+                <a class="theme-switch" title="Switch Theme">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+    <div class="autopagerize_page_element">
+        <div class="content">
+    <div class="post  animated fadeInDown ">
+        <div class="post-content">
+            
+            <div class="post-title">
+                <h3>golang:net/http之web服务源码分析</h3>
+                
+                    <div class="info">
+                        <em class="fas fa-calendar-day"></em>
+                        <span class="date"> Wed, May 5, 2021 
+                                           </span>
+                        <em class="fas fa-stopwatch"></em>
+                        <span class="reading-time">7-minute read</span>
+                    </div>
+                
+            </div>
+
+            <p>本文对go利用net/http包起一个最基本http服务的代码进行分析</p>
+<h4 id="先来看一段最基本的http的server例子">先来看一段最基本的http的server例子：</h4>
+<pre><code>func HandleApp(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte(&quot;hello&quot;))
+}
+func main() {
+	s := http.Server{ //拿到一个server结构体,包含了http的超时等相关配置
+		Addr:              &quot;:8081&quot;,
+		ReadHeaderTimeout: 600 * time.Second,
+		Handler:           nil,
+	}
+	http.HandleFunc(&quot;/app&quot;, HandleApp) // 注册路由
+	s.ListenAndServe()
+}
+</code></pre><blockquote>
+<p>问题：
+（1）为什么执行了http.HandleFunc之后，s.ListenAndServe就能拿到相关注册路由？
+（2）路由注册之后是怎么在s.ListenAndServe()中进行处理的？
+####一、HandleFunc源码
+1、DefaultServeMux全局变量</p>
+</blockquote>
+<pre><code>// HandleFunc registers the handler function for the given pattern
+// in the DefaultServeMux.
+// The documentation for ServeMux explains how patterns are matched.
+func HandleFunc(pattern string, handler func(ResponseWriter, *Request)) {
+	DefaultServeMux.HandleFunc(pattern, handler)
+}
+</code></pre><pre><code>var DefaultServeMux = &amp;defaultServeMux
+var defaultServeMux ServeMux
+type ServeMux struct {
+	mu    sync.RWMutex
+	m     map[string]muxEntry
+	es    []muxEntry // slice of entries sorted from longest to shortest.
+	hosts bool       // whether any patterns contain hostnames
+}
+type muxEntry struct {
+	h       Handler
+	pattern string
+}
+type Handler interface {
+	ServeHTTP(ResponseWriter, *Request)
+}
+</code></pre><p>可以看到server.go中定义了一个全局变量DefaultServeMux，HandleFunc里的方法最终由DefaultServeMux接手包装成muxEntry里的muxEntry结构体</p>
+<p>2、DefaultServeMux.HandleFunc包装</p>
+<pre><code>// HandleFunc registers the handler function for the given pattern.
+func (mux *ServeMux) HandleFunc(pattern string, handler func(ResponseWriter, *Request)) {
+	if handler == nil {
+		panic(&quot;http: nil handler&quot;)
+	}
+	mux.Handle(pattern, HandlerFunc(handler))
+}
+
+// The HandlerFunc type is an adapter to allow the use of
+// ordinary functions as HTTP handlers. If f is a function
+// with the appropriate signature, HandlerFunc(f) is a
+// Handler that calls f.
+type HandlerFunc func(ResponseWriter, *Request)
+
+// ServeHTTP calls f(w, r).
+func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
+	f(w, r)
+}
+</code></pre><p>由HandlerFunc这个adapter结构体来实现，把func(ResponseWriter, *Request)包装成了HandlerFunc类型，而HandlerFunc实现了ServerHttp方法，可以充当为muxEntry里的handler。
+最后由ServerHttp方法来调用实现最开始传入的HandleApp方法（Handler that calls f）。</p>
+<blockquote>
+<p>问题：
+（1）mux.Handle方法里面对HandlerFunc这个handler具体是怎么包装到DefaultServeMux里的呢？</p>
+</blockquote>
+<p>下面看mux.Handle方法:</p>
+<pre><code>// Handle registers the handler for the given pattern.
+// If a handler already exists for pattern, Handle panics.
+func (mux *ServeMux) Handle(pattern string, handler Handler) {
+	mux.mu.Lock()                          // 加锁,防止线程冲突
+	defer mux.mu.Unlock()
+	if pattern == &quot;&quot; {
+		panic(&quot;http: invalid pattern&quot;)          // pattern不能为空
+	}
+	if handler == nil {
+		panic(&quot;http: nil handler&quot;)
+	}
+	if _, exist := mux.m[pattern]; exist {      //  重复pattern,则panic
+		panic(&quot;http: multiple registrations for &quot; + pattern)
+	}
+	if mux.m == nil {
+		mux.m = make(map[string]muxEntry)
+	}
+	e := muxEntry{h: handler, pattern: pattern}    //  包装muxEntry
+	mux.m[pattern] = e            //  放入map
+	if pattern[len(pattern)-1] == '/' {      // 若pattern以&quot;/&quot;结尾，放到es中进行统一处理
+		mux.es = appendSorted(mux.es, e)    // 对pattern的长度进行排序，按长度从大到小
+	}
+	if pattern[0] != '/' {
+		mux.hosts = true    // 标记pattern是否以'/'开头
+	}
+}
+
+func appendSorted(es []muxEntry, e muxEntry) []muxEntry {    
+	n := len(es)
+	i := sort.Search(n, func(i int) bool {      // sort.Search用到了二分法进行排序
+		return len(es[i].pattern) &lt; len(e.pattern)    // 拿到第一个&lt;len(e.pattern)的位置记为I，然后进行插入
+	})  
+	if i == n {
+		return append(es, e)
+	}
+	// we now know that i points at where we want to insert
+	es = append(es, muxEntry{}) // try to grow the slice in place, any entry works.
+	copy(es[i+1:], es[i:])      // Move shorter entries down
+	es[i] = e
+	return es
+}
+
+func Search(n int, f func(int) bool) int {      // sort.Search二分法*****
+	// Define f(-1) == false and f(n) == true.
+	// Invariant: f(i-1) == false, f(j) == true.
+	i, j := 0, n
+	for i &lt; j {
+		h := int(uint(i+j) &gt;&gt; 1) // avoid overflow when computing h
+		// i ≤ h &lt; j
+		if !f(h) {
+			i = h + 1 // preserves f(i-1) == false
+		} else {
+			j = h // preserves f(j) == true
+		}
+	}
+	// i == j, f(i-1) == false, and f(j) (= f(i)) == true  =&gt;  answer is i.
+	return i
+}
+</code></pre><p>看注释，可以知道整体的一个注册路由到DefaultServeMux的逻辑</p>
+<p>####二、ListenAndServe方法实现</p>
+<blockquote>
+<p>现在可以知道路由的传递是由DefaultServeMux这个全局变量来传递的。
+问题：
+（1）最终的ListenAndServe怎么对pattern进行处理的以及拿到DefaultServeMux这个全局变量怎么处理handler的？</p>
+</blockquote>
+<pre><code>func (srv *Server) ListenAndServe() error {
+	if srv.shuttingDown() {
+		return ErrServerClosed
+	}
+	addr := srv.Addr
+	if addr == &quot;&quot; {
+		addr = &quot;:http&quot;
+	}
+	ln, err := net.Listen(&quot;tcp&quot;, addr)     // 启动对端口的监听，最终调用到了socket底层方法并进行了内核系统调用，具体查看相关源码分析
+	if err != nil {
+		return err
+	}
+	return srv.Serve(ln)        // 处理路由入口
+}
+</code></pre><p>再来看srv.Serve(ln)：</p>
+<pre><code>// Serve accepts incoming connections on the Listener l, creating a
+// new service goroutine for each. The service goroutines read requests and
+// then call srv.Handler to reply to them.
+func (srv *Server) Serve(l net.Listener) error {
+	if fn := testHookServerServe; fn != nil {
+		fn(srv, l) // call hook with unwrapped listener
+	}
+	origListener := l
+	l = &amp;onceCloseListener{Listener: l}
+	defer l.Close()
+	if err := srv.setupHTTP2_Serve(); err != nil {
+		return err
+	}
+	if !srv.trackListener(&amp;l, true) {
+		return ErrServerClosed
+	}
+	defer srv.trackListener(&amp;l, false)
+	var tempDelay time.Duration // how long to sleep on accept failure
+	baseCtx := context.Background()
+	if srv.BaseContext != nil {
+		baseCtx = srv.BaseContext(origListener)
+		if baseCtx == nil {
+			panic(&quot;BaseContext returned a nil context&quot;)
+		}
+	}
+	ctx := context.WithValue(baseCtx, ServerContextKey, srv)
+	for {                                                                // 启动循环接收请求
+		rw, e := l.Accept()                               // 监听
+		if e != nil {
+			select {
+			case &lt;-srv.getDoneChan():       
+				return ErrServerClosed
+			default:
+			}
+			if ne, ok := e.(net.Error); ok &amp;&amp; ne.Temporary() {    //accept失败，重试机制
+				if tempDelay == 0 {
+					tempDelay = 5 * time.Millisecond
+				} else {
+					tempDelay *= 2
+				}
+				if max := 1 * time.Second; tempDelay &gt; max {
+					tempDelay = max
+				}
+				srv.logf(&quot;http: Accept error: %v; retrying in %v&quot;, e, tempDelay)
+				time.Sleep(tempDelay)
+				continue
+			}
+			return e
+		}
+		connCtx := ctx
+		if cc := srv.ConnContext; cc != nil {
+			connCtx = cc(connCtx, rw)
+			if connCtx == nil {
+				panic(&quot;ConnContext returned nil&quot;)
+			}
+		}
+		tempDelay = 0
+		c := srv.newConn(rw)
+		c.setState(c.rwc, StateNew)
+		go c.serve(connCtx)    // go c.serve(connCtx)为每个进来的请求建一个groutine进行处理
+	}
+}
+</code></pre><p>下面来看每个groutine对进来的请求的处理</p>
+<pre><code>看到下面的代码：
+func (c *conn) serve(ctx context.Context) {
+...      
+  serverHandler{c.server}.ServeHTTP(w, w.req)
+....
+}
+
+func (sh serverHandler) ServeHTTP(rw ResponseWriter, req *Request) {
+	handler := sh.srv.Handler
+	if handler == nil {                            // server中handler不为空的话，DefaultServeMux就没用了
+		handler = DefaultServeMux
+	}
+	if req.RequestURI == &quot;*&quot; &amp;&amp; req.Method == &quot;OPTIONS&quot; {      // 处理跨域的请求
+		handler = globalOptionsHandler{}    
+	}
+	handler.ServeHTTP(rw, req)
+}
+
+// 关于globalOptionsHandler中的ServeHTTP请求处理
+func (globalOptionsHandler) ServeHTTP(w ResponseWriter, r *Request) {
+	w.Header().Set(&quot;Content-Length&quot;, &quot;0&quot;)        // 设置Content-Length为0
+	if r.ContentLength != 0 {        // 请求体的内容不为空
+		// Read up to 4KB of OPTIONS body (as mentioned in the
+		// spec as being reserved for future use), but anything
+		// over that is considered a waste of server resources
+		// (or an attack) and we abort and close the connection,
+		// courtesy of MaxBytesReader's EOF behavior.
+		mb := MaxBytesReader(w, r.Body, 4&lt;&lt;10)     
+ // 生成一个读取最多4kB的io.ReadCloser，返回maxBytesReader结构体，
+//实现了io.ReadCloser的Read方法，实现的Read方法里最多只能读取4kb的内容，防止攻击和浪费
+		io.Copy(ioutil.Discard, mb)      // 将内容输出到ioutil.Discard丢弃掉
+	}
+}
+
+// 关于DefaultServeMux对应的ServeMux的ServerHTTP方法实现
+// ServeHTTP dispatches the request to the handler whose
+// pattern most closely matches the request URL.
+func (mux *ServeMux) ServeHTTP(w ResponseWriter, r *Request) {
+	if r.RequestURI == &quot;*&quot; {
+		if r.ProtoAtLeast(1, 1) {
+			w.Header().Set(&quot;Connection&quot;, &quot;close&quot;)
+		}
+		w.WriteHeader(StatusBadRequest)
+		return
+	}
+	h, _ := mux.Handler(r)                  //  handler的路由处理
+	h.ServeHTTP(w, r)                       //  ServeHTTP的实现，对应到用户的业务逻辑处理
+}
+
+// 看到mux.Handler(r)：
+// Handler returns the handler to use for the given request,
+// consulting r.Method, r.Host, and r.URL.Path. It always returns
+// a non-nil handler. If the path is not in its canonical form, the
+// handler will be an internally-generated handler that redirects
+// to the canonical path. If the host contains a port, it is ignored
+// when matching handlers.
+//
+// The path and host are used unchanged for CONNECT requests.
+//
+// Handler also returns the registered pattern that matches the
+// request or, in the case of internally-generated redirects,
+// the pattern that will match after following the redirect.
+//
+// If there is no registered handler that applies to the request,
+// Handler returns a ``page not found'' handler and an empty pattern.
+func (mux *ServeMux) Handler(r *Request) (h Handler, pattern string) {
+
+	// CONNECT requests are not canonicalized.
+	if r.Method == &quot;CONNECT&quot; {                                  // 如果请求方法是connect，作为代理请求进行重定向
+		// If r.URL.Path is /tree and its handler is not registered,
+		// the /tree -&gt; /tree/ redirect applies to CONNECT requests
+		// but the path canonicalization does not.
+		if u, ok := mux.redirectToPathSlash(r.URL.Host, r.URL.Path, r.URL); ok {
+			return RedirectHandler(u.String(), StatusMovedPermanently), u.Path
+		}
+
+		return mux.handler(r.Host, r.URL.Path)
+	}
+	// All other requests have any port stripped and path cleaned
+	// before passing to mux.handler.
+	host := stripHostPort(r.Host)
+	path := cleanPath(r.URL.Path)
+	// If the given path is /tree and its handler is not registered,
+	// redirect for /tree/.
+	if u, ok := mux.redirectToPathSlash(host, path, r.URL); ok {
+		return RedirectHandler(u.String(), StatusMovedPermanently), u.Path
+	}
+	if path != r.URL.Path {
+		_, pattern = mux.handler(host, path)
+		url := *r.URL
+		url.Path = path
+		return RedirectHandler(url.String(), StatusMovedPermanently), pattern
+	}
+	return mux.handler(host, r.URL.Path)        // 最终的实现
+}
+
+// 具体的handler处理实现
+
+// handler is the main implementation of Handler.
+// The path is known to be in canonical form, except for CONNECT methods.
+func (mux *ServeMux) handler(host, path string) (h Handler, pattern string) {
+	mux.mu.RLock()
+	defer mux.mu.RUnlock()
+
+	// Host-specific pattern takes precedence over generic ones
+	if mux.hosts {
+		h, pattern = mux.match(host + path)
+	}
+	if h == nil {
+		h, pattern = mux.match(path)
+	}
+	if h == nil {
+		h, pattern = NotFoundHandler(), &quot;&quot;
+	}
+	return
+}
+// 来看看最终的match路由匹配
+
+// Find a handler on a handler map given a path string.
+// Most-specific (longest) pattern wins.
+func (mux *ServeMux) match(path string) (h Handler, pattern string) {
+	// Check for exact match first.
+	v, ok := mux.m[path]               // mux.m含有所有的路径,先匹配字典中是否含有路径,有的话直接返回 
+	if ok {
+		return v.h, v.pattern
+	}
+	// Check for longest valid match.  mux.es contains all patterns
+	// that end in / sorted from longest to shortest.
+	for _, e := range mux.es {                             // 从长到短排序后缀带有'/'           
+		if strings.HasPrefix(path, e.pattern) {          // 再匹配输入的前缀是否匹配mux.es中的某一个，长的pattern先匹配。eg: 两个路由/app/和/app/bef/，对于输入的 /app/bef/hewhj  优先会匹配到 /app/bef/这个路由上
+			return e.h, e.pattern
+		}
+	}
+	return nil, &quot;&quot;
+}
+</code></pre><p>至此，对于一个基本的http的server代码梳理完毕，包含3部分
+（1）路由注册（HandleFunc）
+（2）服务器启动（net.Listen监听，Accept无限循环接收请求）
+（3）路由规则处理（ListenAndServe）</p>
+</div>
+        <div class="post-footer">
+            <div class="info">
+                <span class="separator"><a class="category" href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">源码分析</a></span>
+                <span class="separator"><a class="tag" href="/tags/go/">go</a></span>
+            </div>
+        </div>
+
+        
+    </div>
+
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript"
+        src="/js/medium-zoom.min.2d6fd0be87fa98f0c9b4dc2536b312bbca48757f584f6ea1f394abc9bcc38fbc.js"
+        integrity="sha256-LW/Qvof6mPDJtNwlNrMSu8pIdX9YT26h85SrybzDj7w="
+        crossorigin="anonymous"></script></body>
+
+</html>
