@@ -25,5 +25,32 @@
       <description>本文对go利用net/http包起一个最基本http服务的代码进行分析</description>
     </item>
     
+    <item>
+      <title>k8s:controller开发(1)</title>
+      <link>https://zhuyunfeng111.github.io/post/k8s-controller1/</link>
+      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/post/k8s-controller1/</guid>
+      <description>本文介绍controller的基本代码结构</description>
+    </item>
+    
+    <item>
+      <title>k8s:controller开发(2)</title>
+      <link>https://zhuyunfeng111.github.io/post/k8s-controller2/</link>
+      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/post/k8s-controller2/</guid>
+      <description>本文介绍controller背后的工作流程</description>
+    </item>
+    
+    <item>
+      <title>k8s:深入解析Kubebuilder</title>
+      <link>https://zhuyunfeng111.github.io/post/k8s-crd/</link>
+      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/post/k8s-crd/</guid>
+      <description>本文不对kubebuidler的使用做分析，主要对kubebuiler的生成的模板代码进行分析。</description>
+    </item>
+    
   </channel>
 </rss>

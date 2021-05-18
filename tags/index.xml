@@ -8,6 +8,15 @@
     <language>en-us</language>
     <lastBuildDate>Wed, 05 May 2021 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>controller</title>
+      <link>https://zhuyunfeng111.github.io/tags/controller/</link>
+      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/tags/controller/</guid>
+      <description></description>
+    </item>
+    
+    <item>
       <title>gin</title>
       <link>https://zhuyunfeng111.github.io/tags/gin/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
@@ -22,6 +31,24 @@
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
       <guid>https://zhuyunfeng111.github.io/tags/go/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>informer</title>
+      <link>https://zhuyunfeng111.github.io/tags/informer/</link>
+      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/tags/informer/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>k8s</title>
+      <link>https://zhuyunfeng111.github.io/tags/k8s/</link>
+      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/tags/k8s/</guid>
       <description></description>
     </item>
     
