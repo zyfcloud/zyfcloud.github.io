@@ -126,15 +126,257 @@
                 
                     <div class="info">
                         <em class="fas fa-calendar-day"></em>
-                        <span class="date"> Wed, May 5, 2021 
+                        <span class="date"> Tue, May 5, 2020 
                                            </span>
                         <em class="fas fa-stopwatch"></em>
-                        <span class="reading-time">One-minute read</span>
+                        <span class="reading-time">4-minute read</span>
                     </div>
                 
             </div>
 
             <p>本文介绍controller的基本代码结构</p>
+<h4 id="1一个基本例子">1、一个基本例子:</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+
+	<span style="color:#a6e22e">stopCh</span> <span style="color:#f92672">:=</span> make(<span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{})
+	<span style="color:#66d9ef">defer</span> close(<span style="color:#a6e22e">stopCh</span>)
+
+	<span style="color:#75715e">// （1）New a k8s clientset
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">masterUrl</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;172.27.32.110:8080&#34;</span>
+	<span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">clientcmd</span>.<span style="color:#a6e22e">BuildConfigFromFlags</span>(<span style="color:#a6e22e">masterUrl</span>, <span style="color:#e6db74">&#34;&#34;</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">klog</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;BuildConfigFromFlags err, err: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+	}
+	<span style="color:#a6e22e">clientset</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">kubernetes</span>.<span style="color:#a6e22e">NewForConfig</span>(<span style="color:#a6e22e">config</span>) 
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">klog</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;Get clientset err, err: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+	}
+
+	<span style="color:#75715e">// （2）New a sharedInformers factory
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">sharedInformers</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">informers</span>.<span style="color:#a6e22e">NewSharedInformerFactory</span>(<span style="color:#a6e22e">clientset</span>, <span style="color:#a6e22e">defaultResync</span>)
+
+
+	<span style="color:#75715e">// （3）Register a informer
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">//  f.informers[informerType] = informer,
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">//  the detail for informer is build in NewFilteredPodInformer()
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">podInformer</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sharedInformers</span>.<span style="color:#a6e22e">Core</span>().<span style="color:#a6e22e">V1</span>().<span style="color:#a6e22e">Pods</span>().<span style="color:#a6e22e">Informer</span>()
+
+	<span style="color:#75715e">// （4）Start all informers
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">sharedInformers</span>.<span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">stopCh</span>)
+
+	<span style="color:#75715e">// （5）A cronjob for cache sync
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">WaitForCacheSync</span>(<span style="color:#a6e22e">stopCh</span>, <span style="color:#a6e22e">podInformer</span>.<span style="color:#a6e22e">HasSynced</span>) {
+		<span style="color:#a6e22e">klog</span>.<span style="color:#a6e22e">Infof</span>(<span style="color:#e6db74">&#34;Cache sync fail!&#34;</span>)
+	}
+
+    <span style="color:#75715e">// （6）Use lister
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">podLister</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sharedInformers</span>.<span style="color:#a6e22e">Core</span>().<span style="color:#a6e22e">V1</span>().<span style="color:#a6e22e">Pods</span>().<span style="color:#a6e22e">Lister</span>()
+	<span style="color:#a6e22e">pods</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">podLister</span>.<span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">labels</span>.<span style="color:#a6e22e">Everything</span>())
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">klog</span>.<span style="color:#a6e22e">Infof</span>(<span style="color:#e6db74">&#34;err: %v&#34;</span>, <span style="color:#a6e22e">err</span>)
+	}
+	<span style="color:#a6e22e">klog</span>.<span style="color:#a6e22e">Infof</span>(<span style="color:#e6db74">&#34;len(pods), %d&#34;</span>, len(<span style="color:#a6e22e">pods</span>))
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">v</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">pods</span> {
+		<span style="color:#a6e22e">klog</span>.<span style="color:#a6e22e">Infof</span>(<span style="color:#e6db74">&#34;pod: %s&#34;</span>, <span style="color:#a6e22e">v</span>.<span style="color:#a6e22e">Name</span>)
+	}
+}
+</code></pre></div><p>上面就是一个简单的informer的使用例子，通过lister列出了当前的所有pod。
+整个过程如上述几个步骤,着重说一下（2）、（3）、（4）三个步骤</p>
+<h6 id="2new-a-sharedinformers-factory">（2）New a sharedInformers factory</h6>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">sharedInformers</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">informers</span>.<span style="color:#a6e22e">NewSharedInformerFactory</span>(<span style="color:#a6e22e">clientset</span>, <span style="color:#a6e22e">defaultResync</span>)
+
+<span style="color:#a6e22e">factory</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">sharedInformerFactory</span>{
+            <span style="color:#a6e22e">client</span>:           <span style="color:#a6e22e">client</span>,
+            <span style="color:#a6e22e">namespace</span>:        <span style="color:#a6e22e">v1</span>.<span style="color:#a6e22e">NamespaceAll</span>,
+            <span style="color:#a6e22e">defaultResync</span>:    <span style="color:#a6e22e">defaultResync</span>,
+            <span style="color:#a6e22e">informers</span>:        make(<span style="color:#66d9ef">map</span>[<span style="color:#a6e22e">reflect</span>.<span style="color:#a6e22e">Type</span>]<span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">SharedIndexInformer</span>),
+            <span style="color:#a6e22e">startedInformers</span>: make(<span style="color:#66d9ef">map</span>[<span style="color:#a6e22e">reflect</span>.<span style="color:#a6e22e">Type</span>]<span style="color:#66d9ef">bool</span>),
+            <span style="color:#a6e22e">customResync</span>:     make(<span style="color:#66d9ef">map</span>[<span style="color:#a6e22e">reflect</span>.<span style="color:#a6e22e">Type</span>]<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>),
+        }
+</code></pre></div><p>这个过程就是创建一个informer的工厂,有一个informers结构体,里面是一个informers的map
+sharedInformerFactory是为了防止过多的重复informer导致apiserver压力过大而设计的,
+这样同一个服务中,不同的controller就可以使用同一个informer。</p>
+<h6 id="3register-a-informer">（3）Register a informer</h6>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#a6e22e">podInformer</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sharedInformers</span>.<span style="color:#a6e22e">Core</span>().<span style="color:#a6e22e">V1</span>().<span style="color:#a6e22e">Pods</span>().<span style="color:#a6e22e">Informer</span>()
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">podInformer</span>) <span style="color:#a6e22e">Informer</span>() <span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">SharedIndexInformer</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">factory</span>.<span style="color:#a6e22e">InformerFor</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">corev1</span>.<span style="color:#a6e22e">Pod</span>{}, <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">defaultInformer</span>)
+}
+
+<span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">factory</span>.<span style="color:#a6e22e">InformerFor</span>:
+<span style="color:#75715e">// 注册informer到sharedInformerFactory里的informers
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">sharedInformerFactory</span>) <span style="color:#a6e22e">InformerFor</span>(<span style="color:#a6e22e">obj</span> <span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">Object</span>, <span style="color:#a6e22e">newFunc</span> <span style="color:#a6e22e">internalinterfaces</span>.<span style="color:#a6e22e">NewInformerFunc</span>) <span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">SharedIndexInformer</span> {
+    <span style="color:#f92672">...</span>
+	<span style="color:#a6e22e">informer</span> = <span style="color:#a6e22e">newFunc</span>(<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">client</span>, <span style="color:#a6e22e">resyncPeriod</span>)
+	<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">informers</span>[<span style="color:#a6e22e">informerType</span>] = <span style="color:#a6e22e">informer</span>
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">informer</span>
+}
+
+<span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">defaultInformer</span>:
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">podInformer</span>) <span style="color:#a6e22e">defaultInformer</span>(<span style="color:#a6e22e">client</span> <span style="color:#a6e22e">kubernetes</span>.<span style="color:#a6e22e">Interface</span>, <span style="color:#a6e22e">resyncPeriod</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>) <span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">SharedIndexInformer</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">NewFilteredPodInformer</span>(<span style="color:#a6e22e">client</span>, <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">namespace</span>, <span style="color:#a6e22e">resyncPeriod</span>, <span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">Indexers</span>{<span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">NamespaceIndex</span>: <span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">MetaNamespaceIndexFunc</span>}, <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">tweakListOptions</span>)
+}
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewFilteredPodInformer</span>(<span style="color:#a6e22e">client</span> <span style="color:#a6e22e">kubernetes</span>.<span style="color:#a6e22e">Interface</span>, <span style="color:#a6e22e">namespace</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">resyncPeriod</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>, <span style="color:#a6e22e">indexers</span> <span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">Indexers</span>, <span style="color:#a6e22e">tweakListOptions</span> <span style="color:#a6e22e">internalinterfaces</span>.<span style="color:#a6e22e">TweakListOptionsFunc</span>) <span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">SharedIndexInformer</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">NewSharedIndexInformer</span>(
+		<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">ListWatch</span>{
+			<span style="color:#a6e22e">ListFunc</span>: <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">options</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">ListOptions</span>) (<span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">Object</span>, <span style="color:#66d9ef">error</span>) {
+				<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">tweakListOptions</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+					<span style="color:#a6e22e">tweakListOptions</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">options</span>)
+				}
+				<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">CoreV1</span>().<span style="color:#a6e22e">Pods</span>(<span style="color:#a6e22e">namespace</span>).<span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">TODO</span>(), <span style="color:#a6e22e">options</span>)
+			},
+			<span style="color:#a6e22e">WatchFunc</span>: <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">options</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">ListOptions</span>) (<span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">Interface</span>, <span style="color:#66d9ef">error</span>) {
+				<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">tweakListOptions</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+					<span style="color:#a6e22e">tweakListOptions</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">options</span>)
+				}
+				<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">CoreV1</span>().<span style="color:#a6e22e">Pods</span>(<span style="color:#a6e22e">namespace</span>).<span style="color:#a6e22e">Watch</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">TODO</span>(), <span style="color:#a6e22e">options</span>)
+			},
+		},
+		<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">corev1</span>.<span style="color:#a6e22e">Pod</span>{},
+		<span style="color:#a6e22e">resyncPeriod</span>,
+		<span style="color:#a6e22e">indexers</span>,
+	)
+}
+
+<span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">NewSharedIndexInformer</span> 
+<span style="color:#75715e">// 实际的podInformer的实体就是上面的cache.NewSharedIndexInformer
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewSharedIndexInformer</span>(<span style="color:#a6e22e">lw</span> <span style="color:#a6e22e">ListerWatcher</span>, <span style="color:#a6e22e">exampleObject</span> <span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">Object</span>, <span style="color:#a6e22e">defaultEventHandlerResyncPeriod</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>, <span style="color:#a6e22e">indexers</span> <span style="color:#a6e22e">Indexers</span>) <span style="color:#a6e22e">SharedIndexInformer</span> {
+	<span style="color:#a6e22e">realClock</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">clock</span>.<span style="color:#a6e22e">RealClock</span>{}
+	<span style="color:#a6e22e">sharedIndexInformer</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">sharedIndexInformer</span>{
+		<span style="color:#a6e22e">processor</span>:                       <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">sharedProcessor</span>{<span style="color:#a6e22e">clock</span>: <span style="color:#a6e22e">realClock</span>},
+		<span style="color:#a6e22e">indexer</span>:                         <span style="color:#a6e22e">NewIndexer</span>(<span style="color:#a6e22e">DeletionHandlingMetaNamespaceKeyFunc</span>, <span style="color:#a6e22e">indexers</span>),
+		<span style="color:#a6e22e">listerWatcher</span>:                   <span style="color:#a6e22e">lw</span>,
+		<span style="color:#a6e22e">objectType</span>:                      <span style="color:#a6e22e">exampleObject</span>,
+		<span style="color:#a6e22e">resyncCheckPeriod</span>:               <span style="color:#a6e22e">defaultEventHandlerResyncPeriod</span>,
+		<span style="color:#a6e22e">defaultEventHandlerResyncPeriod</span>: <span style="color:#a6e22e">defaultEventHandlerResyncPeriod</span>,
+		<span style="color:#a6e22e">cacheMutationDetector</span>:           <span style="color:#a6e22e">NewCacheMutationDetector</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Sprintf</span>(<span style="color:#e6db74">&#34;%T&#34;</span>, <span style="color:#a6e22e">exampleObject</span>)),
+		<span style="color:#a6e22e">clock</span>:                           <span style="color:#a6e22e">realClock</span>,
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">sharedIndexInformer</span>
+}
+</code></pre></div><h6 id="4start-all-informers">（4）Start all informers</h6>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Start initializes all requested informers.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">sharedInformerFactory</span>) <span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">stopCh</span> <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}) {
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">informerType</span>, <span style="color:#a6e22e">informer</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">informers</span> {
+		<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">startedInformers</span>[<span style="color:#a6e22e">informerType</span>] {
+			<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">informer</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">stopCh</span>)
+			<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">startedInformers</span>[<span style="color:#a6e22e">informerType</span>] = <span style="color:#66d9ef">true</span>
+		}
+	}
+}
+</code></pre></div><p>我们的例子中其实就是PodInformer Run起来了。那么podInformer Run到底发生了什么呢？
+来看到上面的podInfomer的Run方法</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#66d9ef">go</span> <span style="color:#a6e22e">informer</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">stopCh</span>)
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">s</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">sharedIndexInformer</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">stopCh</span> <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}){
+    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">utilruntime</span>.<span style="color:#a6e22e">HandleCrash</span>()
+
+	<span style="color:#a6e22e">fifo</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewDeltaFIFOWithOptions</span>(<span style="color:#a6e22e">DeltaFIFOOptions</span>{   <span style="color:#75715e">// Deltafifo
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">KnownObjects</span>:          <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">indexer</span>,
+		<span style="color:#a6e22e">EmitDeltaTypeReplaced</span>: <span style="color:#66d9ef">true</span>,
+	})
+	<span style="color:#a6e22e">cfg</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Config</span>{
+		<span style="color:#a6e22e">Queue</span>:            <span style="color:#a6e22e">fifo</span>,         <span style="color:#75715e">// Deltafifo
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">ListerWatcher</span>:    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">listerWatcher</span>,  <span style="color:#75715e">// listerWatcher
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">ObjectType</span>:       <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">objectType</span>,
+		<span style="color:#a6e22e">FullResyncPeriod</span>: <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">resyncCheckPeriod</span>,
+		<span style="color:#a6e22e">RetryOnError</span>:     <span style="color:#66d9ef">false</span>,
+		<span style="color:#a6e22e">ShouldResync</span>:     <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">processor</span>.<span style="color:#a6e22e">shouldResync</span>,
+        <span style="color:#75715e">// HandleDeltas, added to process, and done in processloop
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">Process</span>:           <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">HandleDeltas</span>,      
+		<span style="color:#a6e22e">WatchErrorHandler</span>: <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">watchErrorHandler</span>,
+	}
+    <span style="color:#66d9ef">func</span>() {
+        <span style="color:#f92672">...</span>
+        <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">controller</span> = <span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">cfg</span>)
+        <span style="color:#f92672">...</span>
+    }
+    <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">controller</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">stopCh</span>)
+}
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">s</span>.<span style="color:#a6e22e">controller</span>.<span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">stopCh</span>)
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">controller</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">stopCh</span> <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}) {
+
+	<span style="color:#a6e22e">r</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">NewReflector</span>(
+		<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">ListerWatcher</span>,
+		<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">ObjectType</span>,
+		<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">Queue</span>,
+		<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">FullResyncPeriod</span>,
+	)
+	<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">reflector</span> = <span style="color:#a6e22e">r</span>
+
+    <span style="color:#75715e">// Run reflector
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">StartWithChannel</span>(<span style="color:#a6e22e">stopCh</span>, <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Run</span>)   
+
+    <span style="color:#75715e">// Run processLoop, pop from deltafifo and do ProcessFunc, 
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// ProcessFunc is the s.HandleDeltas before
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">wait</span>.<span style="color:#a6e22e">Until</span>(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">processLoop</span>, <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>, <span style="color:#a6e22e">stopCh</span>) 
+}
+
+
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Reflector</span>) <span style="color:#a6e22e">Run</span>(<span style="color:#a6e22e">stopCh</span> <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}) {
+	<span style="color:#75715e">// 执行listAndWatch
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">ListAndWatch</span>(<span style="color:#a6e22e">stopCh</span>);
+}
+
+<span style="color:#75715e">// 执行ListAndWatch流程
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Reflector</span>)<span style="color:#a6e22e">ListAndWatch</span>(<span style="color:#a6e22e">stopCh</span> <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}) <span style="color:#66d9ef">error</span>{
+    <span style="color:#75715e">// 1、list：
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// （1）、list pods, 实际调用的是podInformer里的ListFunc方法,
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// client.CoreV1().Pods(namespace).List(context.TODO(), options)
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">listerWatcher</span>.<span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">opts</span>)
+
+    <span style="color:#75715e">// （2）、获取资源版本号，用于watch
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">resourceVersion</span> = <span style="color:#a6e22e">listMetaInterface</span>.<span style="color:#a6e22e">GetResourceVersion</span>()
+
+    <span style="color:#75715e">//  （3）、数据转换，转换成列表
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">items</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">ExtractList</span>(<span style="color:#a6e22e">list</span>)
+
+    <span style="color:#75715e">// （4）、将资源列表中的资源对象和版本号存储到DeltaFifo中
+</span><span style="color:#75715e"></span>    <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">syncWith</span>(<span style="color:#a6e22e">items</span>, <span style="color:#a6e22e">resourceVersion</span>);
+
+    <span style="color:#75715e">// 2、watch
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">for</span> {
+        <span style="color:#75715e">// （1）、watch pods, 实际调用的是podInformer里的WatchFunc方法,
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// client.CoreV1().Pods(namespace).Watch(context.TODO(), options)
+</span><span style="color:#75715e"></span>        <span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">listerWatcher</span>.<span style="color:#a6e22e">Watch</span>(<span style="color:#a6e22e">options</span>)
+       
+       <span style="color:#75715e">// （2）、watchHandler
+</span><span style="color:#75715e"></span>       <span style="color:#75715e">// watchHandler watches pod，更新DeltaFifo信息，并且更新resourceVersion
+</span><span style="color:#75715e"></span>       <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">watchHandler</span>(<span style="color:#a6e22e">start</span>, <span style="color:#a6e22e">w</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">resourceVersion</span>, <span style="color:#a6e22e">resyncerrc</span>, <span style="color:#a6e22e">stopCh</span>);
+    }
+}
+
+<span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">watchHandler</span>
+<span style="color:#75715e">// watchHandler watches w and keeps *resourceVersion up to date.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Reflector</span>) <span style="color:#a6e22e">watchHandler</span>(<span style="color:#a6e22e">start</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Time</span>, <span style="color:#a6e22e">w</span> <span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">Interface</span>, <span style="color:#a6e22e">resourceVersion</span> <span style="color:#f92672">*</span><span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">errc</span> <span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">error</span>, <span style="color:#a6e22e">stopCh</span> <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}) <span style="color:#66d9ef">error</span> {
+    <span style="color:#f92672">...</span>
+<span style="color:#a6e22e">loop</span>:
+	<span style="color:#66d9ef">for</span> {
+		<span style="color:#66d9ef">select</span> {
+		<span style="color:#66d9ef">case</span> <span style="color:#a6e22e">event</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">ResultChan</span>():
+			<span style="color:#a6e22e">newResourceVersion</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">GetResourceVersion</span>()
+			<span style="color:#66d9ef">switch</span> <span style="color:#a6e22e">event</span>.<span style="color:#a6e22e">Type</span> {
+			<span style="color:#66d9ef">case</span> <span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">Added</span>:
+				<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">store</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#a6e22e">event</span>.<span style="color:#a6e22e">Object</span>)    <span style="color:#75715e">// Add event to srore, store的具体方法在fifo中
+</span><span style="color:#75715e"></span>				<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+					<span style="color:#a6e22e">utilruntime</span>.<span style="color:#a6e22e">HandleError</span>(<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;%s: unable to add watch event object (%#v) to store: %v&#34;</span>, <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">name</span>, <span style="color:#a6e22e">event</span>.<span style="color:#a6e22e">Object</span>, <span style="color:#a6e22e">err</span>))
+				}
+            <span style="color:#f92672">...</span>
+			}
+			<span style="color:#f92672">*</span><span style="color:#a6e22e">resourceVersion</span> = <span style="color:#a6e22e">newResourceVersion</span>
+			<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">setLastSyncResourceVersion</span>(<span style="color:#a6e22e">newResourceVersion</span>)
+			<span style="color:#a6e22e">eventCount</span><span style="color:#f92672">++</span>
+		}
+	}
+    <span style="color:#f92672">...</span>
+}
+}
+</code></pre></div><p>至此一个informer的启动流程就走完了，可以看到启动informer主要流程就是：
+（1）通过一个reflector run起来一个带有list和watch api的client
+（2）list到的pod列表通过DeltaFifo存储，并更新最新的ResourceVersion
+（3）继续监听pod，监听到的pod操作事件继续存储到DeltaFifo中，保持DeltaFifo中的数据和ETCD中的数据同步</p>
+<p>那么问题来了，监听到事件之后，怎么去使用informer的watch功能，来实现自己的contoller loop呢？？</p>
 </div>
         <div class="post-footer">
             <div class="info">

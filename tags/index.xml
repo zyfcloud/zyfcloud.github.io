@@ -8,6 +8,24 @@
     <language>en-us</language>
     <lastBuildDate>Wed, 05 May 2021 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/tags/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>alertmanager</title>
+      <link>https://zhuyunfeng111.github.io/tags/alertmanager/</link>
+      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/tags/alertmanager/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>architecture</title>
+      <link>https://zhuyunfeng111.github.io/tags/architecture/</link>
+      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/tags/architecture/</guid>
+      <description></description>
+    </item>
+    
+    <item>
       <title>controller</title>
       <link>https://zhuyunfeng111.github.io/tags/controller/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
@@ -17,20 +35,11 @@
     </item>
     
     <item>
-      <title>gin</title>
-      <link>https://zhuyunfeng111.github.io/tags/gin/</link>
+      <title>high avaliable</title>
+      <link>https://zhuyunfeng111.github.io/tags/high-avaliable/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/tags/gin/</guid>
-      <description></description>
-    </item>
-    
-    <item>
-      <title>go</title>
-      <link>https://zhuyunfeng111.github.io/tags/go/</link>
-      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
-      
-      <guid>https://zhuyunfeng111.github.io/tags/go/</guid>
+      <guid>https://zhuyunfeng111.github.io/tags/high-avaliable/</guid>
       <description></description>
     </item>
     
@@ -44,11 +53,47 @@
     </item>
     
     <item>
-      <title>k8s</title>
-      <link>https://zhuyunfeng111.github.io/tags/k8s/</link>
+      <title>prometheus</title>
+      <link>https://zhuyunfeng111.github.io/tags/prometheus/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
+      <guid>https://zhuyunfeng111.github.io/tags/prometheus/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>ipvs</title>
+      <link>https://zhuyunfeng111.github.io/tags/ipvs/</link>
+      <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/tags/ipvs/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>k8s</title>
+      <link>https://zhuyunfeng111.github.io/tags/k8s/</link>
+      <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
+      
       <guid>https://zhuyunfeng111.github.io/tags/k8s/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>gin</title>
+      <link>https://zhuyunfeng111.github.io/tags/gin/</link>
+      <pubDate>Sun, 05 May 2019 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/tags/gin/</guid>
+      <description></description>
+    </item>
+    
+    <item>
+      <title>go</title>
+      <link>https://zhuyunfeng111.github.io/tags/go/</link>
+      <pubDate>Sun, 05 May 2019 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/tags/go/</guid>
       <description></description>
     </item>
     

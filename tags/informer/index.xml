@@ -8,9 +8,18 @@
     <language>en-us</language>
     <lastBuildDate>Wed, 05 May 2021 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/tags/informer/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>alertmanager代码架构</title>
+      <link>https://zhuyunfeng111.github.io/post/prom-alertmanger%E6%BA%90%E7%A0%81/</link>
+      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/post/prom-alertmanger%E6%BA%90%E7%A0%81/</guid>
+      <description>本文通过代码分析alertmanager的架构</description>
+    </item>
+    
+    <item>
       <title>k8s:controller开发(1)</title>
       <link>https://zhuyunfeng111.github.io/post/k8s-controller1/</link>
-      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
       <guid>https://zhuyunfeng111.github.io/post/k8s-controller1/</guid>
       <description>本文介绍controller的基本代码结构</description>
@@ -19,7 +28,7 @@
     <item>
       <title>k8s:controller开发(2)</title>
       <link>https://zhuyunfeng111.github.io/post/k8s-controller2/</link>
-      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
       <guid>https://zhuyunfeng111.github.io/post/k8s-controller2/</guid>
       <description>本文介绍controller背后的工作流程</description>

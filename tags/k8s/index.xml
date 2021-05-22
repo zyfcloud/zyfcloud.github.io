@@ -6,11 +6,11 @@
     <description>Recent content in k8s on ZyfCloud Site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Wed, 05 May 2021 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/tags/k8s/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Tue, 05 May 2020 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/tags/k8s/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>k8s:controller开发(1)</title>
       <link>https://zhuyunfeng111.github.io/post/k8s-controller1/</link>
-      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
       <guid>https://zhuyunfeng111.github.io/post/k8s-controller1/</guid>
       <description>本文介绍controller的基本代码结构</description>
@@ -19,16 +19,25 @@
     <item>
       <title>k8s:controller开发(2)</title>
       <link>https://zhuyunfeng111.github.io/post/k8s-controller2/</link>
-      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
       <guid>https://zhuyunfeng111.github.io/post/k8s-controller2/</guid>
       <description>本文介绍controller背后的工作流程</description>
     </item>
     
     <item>
+      <title>k8s:ipvs的conn_reuse_mode问题</title>
+      <link>https://zhuyunfeng111.github.io/bak/k8s-ipvs-conn_reuse_mode/</link>
+      <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/bak/k8s-ipvs-conn_reuse_mode/</guid>
+      <description>本文介绍ipvs模式下因为conn_reuse_mode导致连接复用产生的问题</description>
+    </item>
+    
+    <item>
       <title>k8s:深入解析Kubebuilder</title>
       <link>https://zhuyunfeng111.github.io/post/k8s-crd/</link>
-      <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
+      <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
       <guid>https://zhuyunfeng111.github.io/post/k8s-crd/</guid>
       <description>本文不对kubebuidler的使用做分析，主要对kubebuiler的生成的模板代码进行分析。</description>
