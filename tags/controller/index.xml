@@ -22,7 +22,7 @@
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
       <guid>https://zhuyunfeng111.github.io/post/k8s-controller1/</guid>
-      <description>本文介绍controller的基本代码结构</description>
+      <description>本文介绍controller中infomer启动的基本流程</description>
     </item>
     
     <item>
@@ -31,7 +31,7 @@
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
       <guid>https://zhuyunfeng111.github.io/post/k8s-controller2/</guid>
-      <description>本文介绍controller背后的工作流程</description>
+      <description>本文介绍controller中infomer启动之后，自己的controller逻辑的实现</description>
     </item>
     
   </channel>
