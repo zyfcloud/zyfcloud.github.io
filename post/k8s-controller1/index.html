@@ -372,10 +372,10 @@ sharedInformerFactory是为了防止过多的重复informer导致apiserver压力
     <span style="color:#f92672">...</span>
 }
 }
-</code></pre></div><p>至此一个informer的启动流程就走完了，可以看到启动informer主要流程就是：
-（1）通过一个reflector run起来一个带有list和watch api的client
-（2）list到的pod列表通过DeltaFifo存储，并更新最新的ResourceVersion
-（3）继续监听pod，监听到的pod操作事件继续存储到DeltaFifo中，保持DeltaFifo中的数据和ETCD中的数据同步</p>
+</code></pre></div><p>至此一个informer的启动流程就走完了，可以看到启动informer主要流程就是：</p>
+<p>（1）通过一个reflector run起来一个带有list和watch api的client</p>
+<p>（2）list到的pod列表通过DeltaFifo存储，并更新最新的ResourceVersion</p>
+<p>（3）继续监听pod，监听到的pod操作事件继续存储到DeltaFifo中，保持DeltaFifo中的数据和ETCD中的数据同步</p>
 <p>那么问题来了，监听到事件之后，怎么去使用informer的watch功能，来实现自己的contoller loop呢？？</p>
 </div>
         <div class="post-footer">

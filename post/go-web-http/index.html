@@ -149,342 +149,341 @@ func main() {
 	s.ListenAndServe()
 }
 </code></pre><blockquote>
-<p>问题：
-（1）为什么执行了http.HandleFunc之后，s.ListenAndServe就能拿到相关注册路由？
-（2）路由注册之后是怎么在s.ListenAndServe()中进行处理的？
-####一、HandleFunc源码
-1、DefaultServeMux全局变量</p>
+<p>问题：</p>
 </blockquote>
-<pre><code>// HandleFunc registers the handler function for the given pattern
-// in the DefaultServeMux.
-// The documentation for ServeMux explains how patterns are matched.
-func HandleFunc(pattern string, handler func(ResponseWriter, *Request)) {
-	DefaultServeMux.HandleFunc(pattern, handler)
+<p>（1）为什么执行了http.HandleFunc之后，s.ListenAndServe就能拿到相关注册路由？</p>
+<p>（2）路由注册之后是怎么在s.ListenAndServe()中进行处理的？</p>
+<h4 id="一handlefunc源码">一、HandleFunc源码</h4>
+<p>1、DefaultServeMux全局变量</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// HandleFunc registers the handler function for the given pattern
+</span><span style="color:#75715e">// in the DefaultServeMux.
+</span><span style="color:#75715e">// The documentation for ServeMux explains how patterns are matched.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">HandleFunc</span>(<span style="color:#a6e22e">pattern</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">handler</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>)) {
+	<span style="color:#a6e22e">DefaultServeMux</span>.<span style="color:#a6e22e">HandleFunc</span>(<span style="color:#a6e22e">pattern</span>, <span style="color:#a6e22e">handler</span>)
 }
-</code></pre><pre><code>var DefaultServeMux = &amp;defaultServeMux
-var defaultServeMux ServeMux
-type ServeMux struct {
-	mu    sync.RWMutex
-	m     map[string]muxEntry
-	es    []muxEntry // slice of entries sorted from longest to shortest.
-	hosts bool       // whether any patterns contain hostnames
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">DefaultServeMux</span> = <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">defaultServeMux</span>
+<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">defaultServeMux</span> <span style="color:#a6e22e">ServeMux</span>
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">ServeMux</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">mu</span>    <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">RWMutex</span>
+	<span style="color:#a6e22e">m</span>     <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">muxEntry</span>
+	<span style="color:#a6e22e">es</span>    []<span style="color:#a6e22e">muxEntry</span> <span style="color:#75715e">// slice of entries sorted from longest to shortest.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">hosts</span> <span style="color:#66d9ef">bool</span>       <span style="color:#75715e">// whether any patterns contain hostnames
+</span><span style="color:#75715e"></span>}
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">muxEntry</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">h</span>       <span style="color:#a6e22e">Handler</span>
+	<span style="color:#a6e22e">pattern</span> <span style="color:#66d9ef">string</span>
 }
-type muxEntry struct {
-	h       Handler
-	pattern string
+<span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Handler</span> <span style="color:#66d9ef">interface</span> {
+	<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>)
 }
-type Handler interface {
-	ServeHTTP(ResponseWriter, *Request)
-}
-</code></pre><p>可以看到server.go中定义了一个全局变量DefaultServeMux，HandleFunc里的方法最终由DefaultServeMux接手包装成muxEntry里的muxEntry结构体</p>
+</code></pre></div><p>可以看到server.go中定义了一个全局变量DefaultServeMux，HandleFunc里的方法最终由DefaultServeMux接手包装成muxEntry里的muxEntry结构体</p>
 <p>2、DefaultServeMux.HandleFunc包装</p>
-<pre><code>// HandleFunc registers the handler function for the given pattern.
-func (mux *ServeMux) HandleFunc(pattern string, handler func(ResponseWriter, *Request)) {
-	if handler == nil {
-		panic(&quot;http: nil handler&quot;)
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// HandleFunc registers the handler function for the given pattern.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">mux</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ServeMux</span>) <span style="color:#a6e22e">HandleFunc</span>(<span style="color:#a6e22e">pattern</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">handler</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>)) {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">handler</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+		panic(<span style="color:#e6db74">&#34;http: nil handler&#34;</span>)
 	}
-	mux.Handle(pattern, HandlerFunc(handler))
+	<span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">Handle</span>(<span style="color:#a6e22e">pattern</span>, <span style="color:#a6e22e">HandlerFunc</span>(<span style="color:#a6e22e">handler</span>))
 }
 
-// The HandlerFunc type is an adapter to allow the use of
-// ordinary functions as HTTP handlers. If f is a function
-// with the appropriate signature, HandlerFunc(f) is a
-// Handler that calls f.
-type HandlerFunc func(ResponseWriter, *Request)
+<span style="color:#75715e">// The HandlerFunc type is an adapter to allow the use of
+</span><span style="color:#75715e">// ordinary functions as HTTP handlers. If f is a function
+</span><span style="color:#75715e">// with the appropriate signature, HandlerFunc(f) is a
+</span><span style="color:#75715e">// Handler that calls f.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">HandlerFunc</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>)
 
-// ServeHTTP calls f(w, r).
-func (f HandlerFunc) ServeHTTP(w ResponseWriter, r *Request) {
-	f(w, r)
+<span style="color:#75715e">// ServeHTTP calls f(w, r).
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#a6e22e">HandlerFunc</span>) <span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>) {
+	<span style="color:#a6e22e">f</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">r</span>)
 }
-</code></pre><p>由HandlerFunc这个adapter结构体来实现，把func(ResponseWriter, *Request)包装成了HandlerFunc类型，而HandlerFunc实现了ServerHttp方法，可以充当为muxEntry里的handler。
-最后由ServerHttp方法来调用实现最开始传入的HandleApp方法（Handler that calls f）。</p>
+</code></pre></div><p>由HandlerFunc这个adapter结构体来实现，把func(ResponseWriter, *Request)包装成了HandlerFunc类型，而HandlerFunc实现了ServerHttp方法，可以充当为muxEntry里的handler。</p>
+<p>最后由ServerHttp方法来调用实现最开始传入的HandleApp方法（Handler that calls f）。</p>
 <blockquote>
 <p>问题：
 （1）mux.Handle方法里面对HandlerFunc这个handler具体是怎么包装到DefaultServeMux里的呢？</p>
 </blockquote>
 <p>下面看mux.Handle方法:</p>
-<pre><code>// Handle registers the handler for the given pattern.
-// If a handler already exists for pattern, Handle panics.
-func (mux *ServeMux) Handle(pattern string, handler Handler) {
-	mux.mu.Lock()                          // 加锁,防止线程冲突
-	defer mux.mu.Unlock()
-	if pattern == &quot;&quot; {
-		panic(&quot;http: invalid pattern&quot;)          // pattern不能为空
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Handle registers the handler for the given pattern.
+</span><span style="color:#75715e">// If a handler already exists for pattern, Handle panics.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">mux</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ServeMux</span>) <span style="color:#a6e22e">Handle</span>(<span style="color:#a6e22e">pattern</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">handler</span> <span style="color:#a6e22e">Handler</span>) {
+	<span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Lock</span>()                          <span style="color:#75715e">// 加锁,防止线程冲突
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Unlock</span>()
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">pattern</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span> {
+		panic(<span style="color:#e6db74">&#34;http: invalid pattern&#34;</span>)          <span style="color:#75715e">// pattern不能为空
+</span><span style="color:#75715e"></span>	}
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">handler</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+		panic(<span style="color:#e6db74">&#34;http: nil handler&#34;</span>)
 	}
-	if handler == nil {
-		panic(&quot;http: nil handler&quot;)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">exist</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">m</span>[<span style="color:#a6e22e">pattern</span>]; <span style="color:#a6e22e">exist</span> {      <span style="color:#75715e">//  重复pattern,则panic
+</span><span style="color:#75715e"></span>		panic(<span style="color:#e6db74">&#34;http: multiple registrations for &#34;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">pattern</span>)
 	}
-	if _, exist := mux.m[pattern]; exist {      //  重复pattern,则panic
-		panic(&quot;http: multiple registrations for &quot; + pattern)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">m</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">m</span> = make(<span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">muxEntry</span>)
 	}
-	if mux.m == nil {
-		mux.m = make(map[string]muxEntry)
-	}
-	e := muxEntry{h: handler, pattern: pattern}    //  包装muxEntry
-	mux.m[pattern] = e            //  放入map
-	if pattern[len(pattern)-1] == '/' {      // 若pattern以&quot;/&quot;结尾，放到es中进行统一处理
-		mux.es = appendSorted(mux.es, e)    // 对pattern的长度进行排序，按长度从大到小
-	}
-	if pattern[0] != '/' {
-		mux.hosts = true    // 标记pattern是否以'/'开头
-	}
+	<span style="color:#a6e22e">e</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">muxEntry</span>{<span style="color:#a6e22e">h</span>: <span style="color:#a6e22e">handler</span>, <span style="color:#a6e22e">pattern</span>: <span style="color:#a6e22e">pattern</span>}    <span style="color:#75715e">//  包装muxEntry
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">m</span>[<span style="color:#a6e22e">pattern</span>] = <span style="color:#a6e22e">e</span>            <span style="color:#75715e">//  放入map
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">pattern</span>[len(<span style="color:#a6e22e">pattern</span>)<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>] <span style="color:#f92672">==</span> <span style="color:#e6db74">&#39;/&#39;</span> {      <span style="color:#75715e">// 若pattern以&#34;/&#34;结尾，放到es中进行统一处理
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">es</span> = <span style="color:#a6e22e">appendSorted</span>(<span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">es</span>, <span style="color:#a6e22e">e</span>)    <span style="color:#75715e">// 对pattern的长度进行排序，按长度从大到小
+</span><span style="color:#75715e"></span>	}
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">pattern</span>[<span style="color:#ae81ff">0</span>] <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#39;/&#39;</span> {
+		<span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">hosts</span> = <span style="color:#66d9ef">true</span>    <span style="color:#75715e">// 标记pattern是否以&#39;/&#39;开头
+</span><span style="color:#75715e"></span>	}
 }
 
-func appendSorted(es []muxEntry, e muxEntry) []muxEntry {    
-	n := len(es)
-	i := sort.Search(n, func(i int) bool {      // sort.Search用到了二分法进行排序
-		return len(es[i].pattern) &lt; len(e.pattern)    // 拿到第一个&lt;len(e.pattern)的位置记为I，然后进行插入
-	})  
-	if i == n {
-		return append(es, e)
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">appendSorted</span>(<span style="color:#a6e22e">es</span> []<span style="color:#a6e22e">muxEntry</span>, <span style="color:#a6e22e">e</span> <span style="color:#a6e22e">muxEntry</span>) []<span style="color:#a6e22e">muxEntry</span> {    
+	<span style="color:#a6e22e">n</span> <span style="color:#f92672">:=</span> len(<span style="color:#a6e22e">es</span>)
+	<span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sort</span>.<span style="color:#a6e22e">Search</span>(<span style="color:#a6e22e">n</span>, <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">i</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">bool</span> {      <span style="color:#75715e">// sort.Search用到了二分法进行排序
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">return</span> len(<span style="color:#a6e22e">es</span>[<span style="color:#a6e22e">i</span>].<span style="color:#a6e22e">pattern</span>) &lt; len(<span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">pattern</span>)    <span style="color:#75715e">// 拿到第一个&lt;len(e.pattern)的位置记为I，然后进行插入
+</span><span style="color:#75715e"></span>	})  
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">n</span> {
+		<span style="color:#66d9ef">return</span> append(<span style="color:#a6e22e">es</span>, <span style="color:#a6e22e">e</span>)
 	}
-	// we now know that i points at where we want to insert
-	es = append(es, muxEntry{}) // try to grow the slice in place, any entry works.
-	copy(es[i+1:], es[i:])      // Move shorter entries down
-	es[i] = e
-	return es
+	<span style="color:#75715e">// we now know that i points at where we want to insert
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">es</span> = append(<span style="color:#a6e22e">es</span>, <span style="color:#a6e22e">muxEntry</span>{}) <span style="color:#75715e">// try to grow the slice in place, any entry works.
+</span><span style="color:#75715e"></span>	copy(<span style="color:#a6e22e">es</span>[<span style="color:#a6e22e">i</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>:], <span style="color:#a6e22e">es</span>[<span style="color:#a6e22e">i</span>:])      <span style="color:#75715e">// Move shorter entries down
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">es</span>[<span style="color:#a6e22e">i</span>] = <span style="color:#a6e22e">e</span>
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">es</span>
 }
 
-func Search(n int, f func(int) bool) int {      // sort.Search二分法*****
-	// Define f(-1) == false and f(n) == true.
-	// Invariant: f(i-1) == false, f(j) == true.
-	i, j := 0, n
-	for i &lt; j {
-		h := int(uint(i+j) &gt;&gt; 1) // avoid overflow when computing h
-		// i ≤ h &lt; j
-		if !f(h) {
-			i = h + 1 // preserves f(i-1) == false
-		} else {
-			j = h // preserves f(j) == true
-		}
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Search</span>(<span style="color:#a6e22e">n</span> <span style="color:#66d9ef">int</span>, <span style="color:#a6e22e">f</span> <span style="color:#66d9ef">func</span>(<span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">bool</span>) <span style="color:#66d9ef">int</span> {      <span style="color:#75715e">// sort.Search二分法*****
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// Define f(-1) == false and f(n) == true.
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// Invariant: f(i-1) == false, f(j) == true.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">j</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>, <span style="color:#a6e22e">n</span>
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> &lt; <span style="color:#a6e22e">j</span> {
+		<span style="color:#a6e22e">h</span> <span style="color:#f92672">:=</span> int(uint(<span style="color:#a6e22e">i</span><span style="color:#f92672">+</span><span style="color:#a6e22e">j</span>) <span style="color:#f92672">&gt;&gt;</span> <span style="color:#ae81ff">1</span>) <span style="color:#75715e">// avoid overflow when computing h
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// i ≤ h &lt; j
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">f</span>(<span style="color:#a6e22e">h</span>) {
+			<span style="color:#a6e22e">i</span> = <span style="color:#a6e22e">h</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span> <span style="color:#75715e">// preserves f(i-1) == false
+</span><span style="color:#75715e"></span>		} <span style="color:#66d9ef">else</span> {
+			<span style="color:#a6e22e">j</span> = <span style="color:#a6e22e">h</span> <span style="color:#75715e">// preserves f(j) == true
+</span><span style="color:#75715e"></span>		}
 	}
-	// i == j, f(i-1) == false, and f(j) (= f(i)) == true  =&gt;  answer is i.
-	return i
+	<span style="color:#75715e">// i == j, f(i-1) == false, and f(j) (= f(i)) == true  =&gt;  answer is i.
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">i</span>
 }
-</code></pre><p>看注释，可以知道整体的一个注册路由到DefaultServeMux的逻辑</p>
-<p>####二、ListenAndServe方法实现</p>
+</code></pre></div><p>看注释，可以知道整体的一个注册路由到DefaultServeMux的逻辑</p>
+<h4 id="二listenandserve方法实现">二、ListenAndServe方法实现</h4>
 <blockquote>
 <p>现在可以知道路由的传递是由DefaultServeMux这个全局变量来传递的。
 问题：
 （1）最终的ListenAndServe怎么对pattern进行处理的以及拿到DefaultServeMux这个全局变量怎么处理handler的？</p>
 </blockquote>
-<pre><code>func (srv *Server) ListenAndServe() error {
-	if srv.shuttingDown() {
-		return ErrServerClosed
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">srv</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">ListenAndServe</span>() <span style="color:#66d9ef">error</span> {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">shuttingDown</span>() {
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ErrServerClosed</span>
 	}
-	addr := srv.Addr
-	if addr == &quot;&quot; {
-		addr = &quot;:http&quot;
+	<span style="color:#a6e22e">addr</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">Addr</span>
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">addr</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;&#34;</span> {
+		<span style="color:#a6e22e">addr</span> = <span style="color:#e6db74">&#34;:http&#34;</span>
 	}
-	ln, err := net.Listen(&quot;tcp&quot;, addr)     // 启动对端口的监听，最终调用到了socket底层方法并进行了内核系统调用，具体查看相关源码分析
-	if err != nil {
-		return err
+	<span style="color:#a6e22e">ln</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Listen</span>(<span style="color:#e6db74">&#34;tcp&#34;</span>, <span style="color:#a6e22e">addr</span>)     <span style="color:#75715e">// 启动对端口的监听，最终调用到了socket底层方法并进行了内核系统调用，具体查看相关源码分析
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
 	}
-	return srv.Serve(ln)        // 处理路由入口
-}
-</code></pre><p>再来看srv.Serve(ln)：</p>
-<pre><code>// Serve accepts incoming connections on the Listener l, creating a
-// new service goroutine for each. The service goroutines read requests and
-// then call srv.Handler to reply to them.
-func (srv *Server) Serve(l net.Listener) error {
-	if fn := testHookServerServe; fn != nil {
-		fn(srv, l) // call hook with unwrapped listener
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">ln</span>)        <span style="color:#75715e">// 处理路由入口
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>再来看srv.Serve(ln)：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Serve accepts incoming connections on the Listener l, creating a
+</span><span style="color:#75715e">// new service goroutine for each. The service goroutines read requests and
+</span><span style="color:#75715e">// then call srv.Handler to reply to them.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">srv</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Server</span>) <span style="color:#a6e22e">Serve</span>(<span style="color:#a6e22e">l</span> <span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Listener</span>) <span style="color:#66d9ef">error</span> {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">fn</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">testHookServerServe</span>; <span style="color:#a6e22e">fn</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">fn</span>(<span style="color:#a6e22e">srv</span>, <span style="color:#a6e22e">l</span>) <span style="color:#75715e">// call hook with unwrapped listener
+</span><span style="color:#75715e"></span>	}
+	<span style="color:#a6e22e">origListener</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">l</span>
+	<span style="color:#a6e22e">l</span> = <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">onceCloseListener</span>{<span style="color:#a6e22e">Listener</span>: <span style="color:#a6e22e">l</span>}
+	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">l</span>.<span style="color:#a6e22e">Close</span>()
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">setupHTTP2_Serve</span>(); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
 	}
-	origListener := l
-	l = &amp;onceCloseListener{Listener: l}
-	defer l.Close()
-	if err := srv.setupHTTP2_Serve(); err != nil {
-		return err
+	<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">trackListener</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">l</span>, <span style="color:#66d9ef">true</span>) {
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ErrServerClosed</span>
 	}
-	if !srv.trackListener(&amp;l, true) {
-		return ErrServerClosed
-	}
-	defer srv.trackListener(&amp;l, false)
-	var tempDelay time.Duration // how long to sleep on accept failure
-	baseCtx := context.Background()
-	if srv.BaseContext != nil {
-		baseCtx = srv.BaseContext(origListener)
-		if baseCtx == nil {
-			panic(&quot;BaseContext returned a nil context&quot;)
+	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">trackListener</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">l</span>, <span style="color:#66d9ef">false</span>)
+	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">tempDelay</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span> <span style="color:#75715e">// how long to sleep on accept failure
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">baseCtx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">BaseContext</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">baseCtx</span> = <span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">BaseContext</span>(<span style="color:#a6e22e">origListener</span>)
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">baseCtx</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+			panic(<span style="color:#e6db74">&#34;BaseContext returned a nil context&#34;</span>)
 		}
 	}
-	ctx := context.WithValue(baseCtx, ServerContextKey, srv)
-	for {                                                                // 启动循环接收请求
-		rw, e := l.Accept()                               // 监听
-		if e != nil {
-			select {
-			case &lt;-srv.getDoneChan():       
-				return ErrServerClosed
-			default:
+	<span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">WithValue</span>(<span style="color:#a6e22e">baseCtx</span>, <span style="color:#a6e22e">ServerContextKey</span>, <span style="color:#a6e22e">srv</span>)
+	<span style="color:#66d9ef">for</span> {                                                                <span style="color:#75715e">// 启动循环接收请求
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">rw</span>, <span style="color:#a6e22e">e</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">l</span>.<span style="color:#a6e22e">Accept</span>()                               <span style="color:#75715e">// 监听
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">e</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#66d9ef">select</span> {
+			<span style="color:#66d9ef">case</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">getDoneChan</span>():       
+				<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ErrServerClosed</span>
+			<span style="color:#66d9ef">default</span>:
 			}
-			if ne, ok := e.(net.Error); ok &amp;&amp; ne.Temporary() {    //accept失败，重试机制
-				if tempDelay == 0 {
-					tempDelay = 5 * time.Millisecond
-				} else {
-					tempDelay *= 2
+			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">ne</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">e</span>.(<span style="color:#a6e22e">net</span>.<span style="color:#a6e22e">Error</span>); <span style="color:#a6e22e">ok</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">ne</span>.<span style="color:#a6e22e">Temporary</span>() {    <span style="color:#75715e">//accept失败，重试机制
+</span><span style="color:#75715e"></span>				<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">tempDelay</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+					<span style="color:#a6e22e">tempDelay</span> = <span style="color:#ae81ff">5</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Millisecond</span>
+				} <span style="color:#66d9ef">else</span> {
+					<span style="color:#a6e22e">tempDelay</span> <span style="color:#f92672">*=</span> <span style="color:#ae81ff">2</span>
 				}
-				if max := 1 * time.Second; tempDelay &gt; max {
-					tempDelay = max
+				<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">max</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">1</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span>; <span style="color:#a6e22e">tempDelay</span> &gt; <span style="color:#a6e22e">max</span> {
+					<span style="color:#a6e22e">tempDelay</span> = <span style="color:#a6e22e">max</span>
 				}
-				srv.logf(&quot;http: Accept error: %v; retrying in %v&quot;, e, tempDelay)
-				time.Sleep(tempDelay)
-				continue
+				<span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">logf</span>(<span style="color:#e6db74">&#34;http: Accept error: %v; retrying in %v&#34;</span>, <span style="color:#a6e22e">e</span>, <span style="color:#a6e22e">tempDelay</span>)
+				<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Sleep</span>(<span style="color:#a6e22e">tempDelay</span>)
+				<span style="color:#66d9ef">continue</span>
 			}
-			return e
+			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">e</span>
 		}
-		connCtx := ctx
-		if cc := srv.ConnContext; cc != nil {
-			connCtx = cc(connCtx, rw)
-			if connCtx == nil {
-				panic(&quot;ConnContext returned nil&quot;)
+		<span style="color:#a6e22e">connCtx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ctx</span>
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">cc</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">ConnContext</span>; <span style="color:#a6e22e">cc</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#a6e22e">connCtx</span> = <span style="color:#a6e22e">cc</span>(<span style="color:#a6e22e">connCtx</span>, <span style="color:#a6e22e">rw</span>)
+			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">connCtx</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+				panic(<span style="color:#e6db74">&#34;ConnContext returned nil&#34;</span>)
 			}
 		}
-		tempDelay = 0
-		c := srv.newConn(rw)
-		c.setState(c.rwc, StateNew)
-		go c.serve(connCtx)    // go c.serve(connCtx)为每个进来的请求建一个groutine进行处理
-	}
+		<span style="color:#a6e22e">tempDelay</span> = <span style="color:#ae81ff">0</span>
+		<span style="color:#a6e22e">c</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">newConn</span>(<span style="color:#a6e22e">rw</span>)
+		<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">setState</span>(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">rwc</span>, <span style="color:#a6e22e">StateNew</span>)
+		<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">serve</span>(<span style="color:#a6e22e">connCtx</span>)    <span style="color:#75715e">// go c.serve(connCtx)为每个进来的请求建一个groutine进行处理
+</span><span style="color:#75715e"></span>	}
 }
-</code></pre><p>下面来看每个groutine对进来的请求的处理</p>
-<pre><code>看到下面的代码：
-func (c *conn) serve(ctx context.Context) {
-...      
-  serverHandler{c.server}.ServeHTTP(w, w.req)
-....
-}
-
-func (sh serverHandler) ServeHTTP(rw ResponseWriter, req *Request) {
-	handler := sh.srv.Handler
-	if handler == nil {                            // server中handler不为空的话，DefaultServeMux就没用了
-		handler = DefaultServeMux
-	}
-	if req.RequestURI == &quot;*&quot; &amp;&amp; req.Method == &quot;OPTIONS&quot; {      // 处理跨域的请求
-		handler = globalOptionsHandler{}    
-	}
-	handler.ServeHTTP(rw, req)
+</code></pre></div><p>下面来看每个groutine对进来的请求的处理</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">conn</span>) <span style="color:#a6e22e">serve</span>(<span style="color:#a6e22e">ctx</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Context</span>) {
+<span style="color:#f92672">...</span>      
+  <span style="color:#a6e22e">serverHandler</span>{<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">server</span>}.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">req</span>)
+<span style="color:#f92672">...</span>.
 }
 
-// 关于globalOptionsHandler中的ServeHTTP请求处理
-func (globalOptionsHandler) ServeHTTP(w ResponseWriter, r *Request) {
-	w.Header().Set(&quot;Content-Length&quot;, &quot;0&quot;)        // 设置Content-Length为0
-	if r.ContentLength != 0 {        // 请求体的内容不为空
-		// Read up to 4KB of OPTIONS body (as mentioned in the
-		// spec as being reserved for future use), but anything
-		// over that is considered a waste of server resources
-		// (or an attack) and we abort and close the connection,
-		// courtesy of MaxBytesReader's EOF behavior.
-		mb := MaxBytesReader(w, r.Body, 4&lt;&lt;10)     
- // 生成一个读取最多4kB的io.ReadCloser，返回maxBytesReader结构体，
-//实现了io.ReadCloser的Read方法，实现的Read方法里最多只能读取4kb的内容，防止攻击和浪费
-		io.Copy(ioutil.Discard, mb)      // 将内容输出到ioutil.Discard丢弃掉
+<span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">sh</span> <span style="color:#a6e22e">serverHandler</span>) <span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">rw</span> <span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">req</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>) {
+	<span style="color:#a6e22e">handler</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">sh</span>.<span style="color:#a6e22e">srv</span>.<span style="color:#a6e22e">Handler</span>
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">handler</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {                            <span style="color:#75715e">// server中handler不为空的话，DefaultServeMux就没用了
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">handler</span> = <span style="color:#a6e22e">DefaultServeMux</span>
 	}
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">RequestURI</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;*&#34;</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Method</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;OPTIONS&#34;</span> {      <span style="color:#75715e">// 处理跨域的请求
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">handler</span> = <span style="color:#a6e22e">globalOptionsHandler</span>{}    
+	}
+	<span style="color:#a6e22e">handler</span>.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">rw</span>, <span style="color:#a6e22e">req</span>)
 }
 
-// 关于DefaultServeMux对应的ServeMux的ServerHTTP方法实现
-// ServeHTTP dispatches the request to the handler whose
-// pattern most closely matches the request URL.
-func (mux *ServeMux) ServeHTTP(w ResponseWriter, r *Request) {
-	if r.RequestURI == &quot;*&quot; {
-		if r.ProtoAtLeast(1, 1) {
-			w.Header().Set(&quot;Connection&quot;, &quot;close&quot;)
+<span style="color:#75715e">// 关于globalOptionsHandler中的ServeHTTP请求处理
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">globalOptionsHandler</span>) <span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>) {
+	<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">Header</span>().<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;Content-Length&#34;</span>, <span style="color:#e6db74">&#34;0&#34;</span>)        <span style="color:#75715e">// 设置Content-Length为0
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">ContentLength</span> <span style="color:#f92672">!=</span> <span style="color:#ae81ff">0</span> {        <span style="color:#75715e">// 请求体的内容不为空
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// Read up to 4KB of OPTIONS body (as mentioned in the
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// spec as being reserved for future use), but anything
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// over that is considered a waste of server resources
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// (or an attack) and we abort and close the connection,
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// courtesy of MaxBytesReader&#39;s EOF behavior.
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">mb</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">MaxBytesReader</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Body</span>, <span style="color:#ae81ff">4</span><span style="color:#f92672">&lt;&lt;</span><span style="color:#ae81ff">10</span>)     
+ <span style="color:#75715e">// 生成一个读取最多4kB的io.ReadCloser，返回maxBytesReader结构体，
+</span><span style="color:#75715e">//实现了io.ReadCloser的Read方法，实现的Read方法里最多只能读取4kb的内容，防止攻击和浪费
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">io</span>.<span style="color:#a6e22e">Copy</span>(<span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">Discard</span>, <span style="color:#a6e22e">mb</span>)      <span style="color:#75715e">// 将内容输出到ioutil.Discard丢弃掉
+</span><span style="color:#75715e"></span>	}
+}
+
+<span style="color:#75715e">// 关于DefaultServeMux对应的ServeMux的ServerHTTP方法实现
+</span><span style="color:#75715e">// ServeHTTP dispatches the request to the handler whose
+</span><span style="color:#75715e">// pattern most closely matches the request URL.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">mux</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ServeMux</span>) <span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span> <span style="color:#a6e22e">ResponseWriter</span>, <span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>) {
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">RequestURI</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;*&#34;</span> {
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">ProtoAtLeast</span>(<span style="color:#ae81ff">1</span>, <span style="color:#ae81ff">1</span>) {
+			<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">Header</span>().<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;Connection&#34;</span>, <span style="color:#e6db74">&#34;close&#34;</span>)
 		}
-		w.WriteHeader(StatusBadRequest)
-		return
+		<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">WriteHeader</span>(<span style="color:#a6e22e">StatusBadRequest</span>)
+		<span style="color:#66d9ef">return</span>
 	}
-	h, _ := mux.Handler(r)                  //  handler的路由处理
-	h.ServeHTTP(w, r)                       //  ServeHTTP的实现，对应到用户的业务逻辑处理
-}
+	<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">Handler</span>(<span style="color:#a6e22e">r</span>)                  <span style="color:#75715e">//  handler的路由处理
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">ServeHTTP</span>(<span style="color:#a6e22e">w</span>, <span style="color:#a6e22e">r</span>)                       <span style="color:#75715e">//  ServeHTTP的实现，对应到用户的业务逻辑处理
+</span><span style="color:#75715e"></span>}
 
-// 看到mux.Handler(r)：
-// Handler returns the handler to use for the given request,
-// consulting r.Method, r.Host, and r.URL.Path. It always returns
-// a non-nil handler. If the path is not in its canonical form, the
-// handler will be an internally-generated handler that redirects
-// to the canonical path. If the host contains a port, it is ignored
-// when matching handlers.
-//
-// The path and host are used unchanged for CONNECT requests.
-//
-// Handler also returns the registered pattern that matches the
-// request or, in the case of internally-generated redirects,
-// the pattern that will match after following the redirect.
-//
-// If there is no registered handler that applies to the request,
-// Handler returns a ``page not found'' handler and an empty pattern.
-func (mux *ServeMux) Handler(r *Request) (h Handler, pattern string) {
+<span style="color:#75715e">// 看到mux.Handler(r)：
+</span><span style="color:#75715e">// Handler returns the handler to use for the given request,
+</span><span style="color:#75715e">// consulting r.Method, r.Host, and r.URL.Path. It always returns
+</span><span style="color:#75715e">// a non-nil handler. If the path is not in its canonical form, the
+</span><span style="color:#75715e">// handler will be an internally-generated handler that redirects
+</span><span style="color:#75715e">// to the canonical path. If the host contains a port, it is ignored
+</span><span style="color:#75715e">// when matching handlers.
+</span><span style="color:#75715e">//
+</span><span style="color:#75715e">// The path and host are used unchanged for CONNECT requests.
+</span><span style="color:#75715e">//
+</span><span style="color:#75715e">// Handler also returns the registered pattern that matches the
+</span><span style="color:#75715e">// request or, in the case of internally-generated redirects,
+</span><span style="color:#75715e">// the pattern that will match after following the redirect.
+</span><span style="color:#75715e">//
+</span><span style="color:#75715e">// If there is no registered handler that applies to the request,
+</span><span style="color:#75715e">// Handler returns a ``page not found&#39;&#39; handler and an empty pattern.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">mux</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ServeMux</span>) <span style="color:#a6e22e">Handler</span>(<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Request</span>) (<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">Handler</span>, <span style="color:#a6e22e">pattern</span> <span style="color:#66d9ef">string</span>) {
 
-	// CONNECT requests are not canonicalized.
-	if r.Method == &quot;CONNECT&quot; {                                  // 如果请求方法是connect，作为代理请求进行重定向
-		// If r.URL.Path is /tree and its handler is not registered,
-		// the /tree -&gt; /tree/ redirect applies to CONNECT requests
-		// but the path canonicalization does not.
-		if u, ok := mux.redirectToPathSlash(r.URL.Host, r.URL.Path, r.URL); ok {
-			return RedirectHandler(u.String(), StatusMovedPermanently), u.Path
+	<span style="color:#75715e">// CONNECT requests are not canonicalized.
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Method</span> <span style="color:#f92672">==</span> <span style="color:#e6db74">&#34;CONNECT&#34;</span> {                                  <span style="color:#75715e">// 如果请求方法是connect，作为代理请求进行重定向
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// If r.URL.Path is /tree and its handler is not registered,
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// the /tree -&gt; /tree/ redirect applies to CONNECT requests
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// but the path canonicalization does not.
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">u</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">redirectToPathSlash</span>(<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">Host</span>, <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">Path</span>, <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>); <span style="color:#a6e22e">ok</span> {
+			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">RedirectHandler</span>(<span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">String</span>(), <span style="color:#a6e22e">StatusMovedPermanently</span>), <span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">Path</span>
 		}
 
-		return mux.handler(r.Host, r.URL.Path)
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">handler</span>(<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Host</span>, <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">Path</span>)
 	}
-	// All other requests have any port stripped and path cleaned
-	// before passing to mux.handler.
-	host := stripHostPort(r.Host)
-	path := cleanPath(r.URL.Path)
-	// If the given path is /tree and its handler is not registered,
-	// redirect for /tree/.
-	if u, ok := mux.redirectToPathSlash(host, path, r.URL); ok {
-		return RedirectHandler(u.String(), StatusMovedPermanently), u.Path
+	<span style="color:#75715e">// All other requests have any port stripped and path cleaned
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// before passing to mux.handler.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">host</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">stripHostPort</span>(<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">Host</span>)
+	<span style="color:#a6e22e">path</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">cleanPath</span>(<span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">Path</span>)
+	<span style="color:#75715e">// If the given path is /tree and its handler is not registered,
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// redirect for /tree/.
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">u</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">redirectToPathSlash</span>(<span style="color:#a6e22e">host</span>, <span style="color:#a6e22e">path</span>, <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>); <span style="color:#a6e22e">ok</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">RedirectHandler</span>(<span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">String</span>(), <span style="color:#a6e22e">StatusMovedPermanently</span>), <span style="color:#a6e22e">u</span>.<span style="color:#a6e22e">Path</span>
 	}
-	if path != r.URL.Path {
-		_, pattern = mux.handler(host, path)
-		url := *r.URL
-		url.Path = path
-		return RedirectHandler(url.String(), StatusMovedPermanently), pattern
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">path</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">Path</span> {
+		<span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">pattern</span> = <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">handler</span>(<span style="color:#a6e22e">host</span>, <span style="color:#a6e22e">path</span>)
+		<span style="color:#a6e22e">url</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>
+		<span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">Path</span> = <span style="color:#a6e22e">path</span>
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">RedirectHandler</span>(<span style="color:#a6e22e">url</span>.<span style="color:#a6e22e">String</span>(), <span style="color:#a6e22e">StatusMovedPermanently</span>), <span style="color:#a6e22e">pattern</span>
 	}
-	return mux.handler(host, r.URL.Path)        // 最终的实现
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">handler</span>(<span style="color:#a6e22e">host</span>, <span style="color:#a6e22e">r</span>.<span style="color:#a6e22e">URL</span>.<span style="color:#a6e22e">Path</span>)        <span style="color:#75715e">// 最终的实现
+</span><span style="color:#75715e"></span>}
+
+<span style="color:#75715e">// 具体的handler处理实现
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">// handler is the main implementation of Handler.
+</span><span style="color:#75715e">// The path is known to be in canonical form, except for CONNECT methods.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">mux</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ServeMux</span>) <span style="color:#a6e22e">handler</span>(<span style="color:#a6e22e">host</span>, <span style="color:#a6e22e">path</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">Handler</span>, <span style="color:#a6e22e">pattern</span> <span style="color:#66d9ef">string</span>) {
+	<span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">RLock</span>()
+	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">RUnlock</span>()
+
+	<span style="color:#75715e">// Host-specific pattern takes precedence over generic ones
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">hosts</span> {
+		<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">pattern</span> = <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">match</span>(<span style="color:#a6e22e">host</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">path</span>)
+	}
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">h</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">pattern</span> = <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">match</span>(<span style="color:#a6e22e">path</span>)
+	}
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">h</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">pattern</span> = <span style="color:#a6e22e">NotFoundHandler</span>(), <span style="color:#e6db74">&#34;&#34;</span>
+	}
+	<span style="color:#66d9ef">return</span>
 }
-
-// 具体的handler处理实现
-
-// handler is the main implementation of Handler.
-// The path is known to be in canonical form, except for CONNECT methods.
-func (mux *ServeMux) handler(host, path string) (h Handler, pattern string) {
-	mux.mu.RLock()
-	defer mux.mu.RUnlock()
-
-	// Host-specific pattern takes precedence over generic ones
-	if mux.hosts {
-		h, pattern = mux.match(host + path)
+<span style="color:#75715e">// 来看看最终的match路由匹配
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">// Find a handler on a handler map given a path string.
+</span><span style="color:#75715e">// Most-specific (longest) pattern wins.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">mux</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">ServeMux</span>) <span style="color:#a6e22e">match</span>(<span style="color:#a6e22e">path</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">Handler</span>, <span style="color:#a6e22e">pattern</span> <span style="color:#66d9ef">string</span>) {
+	<span style="color:#75715e">// Check for exact match first.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">v</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">m</span>[<span style="color:#a6e22e">path</span>]               <span style="color:#75715e">// mux.m含有所有的路径,先匹配字典中是否含有路径,有的话直接返回 
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">ok</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">v</span>.<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">v</span>.<span style="color:#a6e22e">pattern</span>
 	}
-	if h == nil {
-		h, pattern = mux.match(path)
-	}
-	if h == nil {
-		h, pattern = NotFoundHandler(), &quot;&quot;
-	}
-	return
-}
-// 来看看最终的match路由匹配
-
-// Find a handler on a handler map given a path string.
-// Most-specific (longest) pattern wins.
-func (mux *ServeMux) match(path string) (h Handler, pattern string) {
-	// Check for exact match first.
-	v, ok := mux.m[path]               // mux.m含有所有的路径,先匹配字典中是否含有路径,有的话直接返回 
-	if ok {
-		return v.h, v.pattern
-	}
-	// Check for longest valid match.  mux.es contains all patterns
-	// that end in / sorted from longest to shortest.
-	for _, e := range mux.es {                             // 从长到短排序后缀带有'/'           
-		if strings.HasPrefix(path, e.pattern) {          // 再匹配输入的前缀是否匹配mux.es中的某一个，长的pattern先匹配。eg: 两个路由/app/和/app/bef/，对于输入的 /app/bef/hewhj  优先会匹配到 /app/bef/这个路由上
-			return e.h, e.pattern
+	<span style="color:#75715e">// Check for longest valid match.  mux.es contains all patterns
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// that end in / sorted from longest to shortest.
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">e</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">mux</span>.<span style="color:#a6e22e">es</span> {                             <span style="color:#75715e">// 从长到短排序后缀带有&#39;/&#39;           
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">strings</span>.<span style="color:#a6e22e">HasPrefix</span>(<span style="color:#a6e22e">path</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">pattern</span>) {          <span style="color:#75715e">// 再匹配输入的前缀是否匹配mux.es中的某一个，长的pattern先匹配。eg: 两个路由/app/和/app/bef/，对于输入的 /app/bef/hewhj  优先会匹配到 /app/bef/这个路由上
+</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">pattern</span>
 		}
 	}
-	return nil, &quot;&quot;
+	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#e6db74">&#34;&#34;</span>
 }
-</code></pre><p>至此，对于一个基本的http的server代码梳理完毕，包含3部分
-（1）路由注册（HandleFunc）
-（2）服务器启动（net.Listen监听，Accept无限循环接收请求）
-（3）路由规则处理（ListenAndServe）</p>
+</code></pre></div><p>至此，对于一个基本的http的server代码梳理完毕，包含3部分</p>
+<p>（1）路由注册（HandleFunc）</p>
+<p>（2）服务器启动（net.Listen监听，Accept无限循环接收请求）</p>
+<p>（3）路由规则处理（ListenAndServe）</p>
 </div>
         <div class="post-footer">
             <div class="info">
