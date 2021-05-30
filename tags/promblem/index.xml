@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>promblem on ZyfCloud Site</title>
+    <link>https://zhuyunfeng111.github.io/tags/promblem/</link>
+    <description>Recent content in promblem on ZyfCloud Site</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 30 May 2021 17:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/tags/promblem/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>记一次go踩坑——go版本和内核冲突</title>
+      <link>https://zhuyunfeng111.github.io/post/go-bug/</link>
+      <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/post/go-bug/</guid>
+      <description>本文介绍一次go使用踩坑的过程</description>
+    </item>
+    
+  </channel>
+</rss>

@@ -135,7 +135,14 @@
             </div>
 
             <p>本文介绍controller中infomer启动之后，自己的controller逻辑的实现</p>
-<p>Q：indexer的作用，自定义控制器为什么不能直接拿回调过来的资源参数和实际的状态进行对比，而是要重新到indexer里取一下？？</p>
+<p>Q：indexer的作用，自定义控制器为什么不能直接拿回调过来的资源参数和实际的状态进行对比，而是要重新到indexer里取一下？
+A：indexer是一个本地缓存，也不是controller里的所有事件都只是通过event的object就够了，</p>
+<p>比如有些可能需要list全部资源，这个时候如果本地没有缓存的话重新去apiserver获取就不合适了。</p>
+<p>那么这个前提下对于事件触发类型的，把资源对象整个都放到queue里的话就会显得浪费了，因为本地既然都已经有这个对象了。</p>
+<p>那么问题来了，会不会我处理的逻辑时间很长，从indexer拿到的资源已经被下一次事件更新过了的了，有关系吗？</p>
+<p>也没关系，因为就是需要达到最终的状态，所以只需要拿当前的期望状态即可，之前的期望状态其实已经没有用了。</p>
+<p>Q：Informer 中为什么需要引入 Resync 机制？</p>
+<p>Q：indexer的store和index是啥？</p>
 </div>
         <div class="post-footer">
             <div class="info">

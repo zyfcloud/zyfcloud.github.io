@@ -6,7 +6,16 @@
     <description>Recent content in go on ZyfCloud Site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 05 May 2019 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/tags/go/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 30 May 2021 17:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/tags/go/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>记一次go踩坑——go版本和内核冲突</title>
+      <link>https://zhuyunfeng111.github.io/post/go-bug/</link>
+      <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/post/go-bug/</guid>
+      <description>本文介绍一次go使用踩坑的过程</description>
+    </item>
+    
     <item>
       <title>golang:gin和net/http</title>
       <link>https://zhuyunfeng111.github.io/post/go-web-gin/</link>
