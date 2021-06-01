@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html  dir="ltr" lang="en" data-theme=""><head>
+    <title> zyfcloud | 本文介绍go调度模型gmp调度模型 </title>
+
+    
+    <meta charset="utf-8"><meta name="generator" content="Hugo 0.81.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="description" content="本文介绍go调度模型gmp调度模型">
+    
+    
+    
+    <link rel="stylesheet"
+        href="/css/style.min.51d7ec6db610dce512b735d5315f963c278042d026aa4ebe05a9355460b49016.css"
+        integrity="sha256-UdfsbbYQ3OUStzXVMV&#43;WPCeAQtAmqk6&#43;Bak1VGC0kBY="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    
+    <link rel="stylesheet"
+        href="/css/markupHighlight.min.f798cbda9aaa38f89eb38be6414bd082cfd71a6780375cbf67b6d2fb2b96491e.css"
+        integrity="sha256-95jL2pqqOPies4vmQUvQgs/XGmeAN1y/Z7bS&#43;yuWSR4="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    <link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" 
+    integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" 
+    crossorigin="anonymous" />
+
+    
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+    <link rel="canonical" href="/post/go-gmp%E6%A8%A1%E5%9E%8B/">
+
+    
+    
+    
+    
+    <script type="text/javascript"
+            src="/js/anatole-header.min.0c05c0a90d28c968a1cad4fb31abd0b8e1264e788ccefed022ae1d3b6f627514.js"
+            integrity="sha256-DAXAqQ0oyWihytT7MavQuOEmTniMzv7QIq4dO29idRQ="
+            crossorigin="anonymous"></script>
+
+
+    
+        
+        
+        <script type="text/javascript"
+                src="/js/anatole-theme-switcher.min.7fd87181cdd7e8413aa64b6867bb32f3a8dc242e684fc7d5bbb9f600dbc2b6eb.js"
+                integrity="sha256-f9hxgc3X6EE6pktoZ7sy86jcJC5oT8fVu7n2ANvCtus="
+                crossorigin="anonymous"></script>
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="本文介绍go调度模型gmp调度模型"/>
+<meta name="twitter:description" content="本文介绍go调度模型gmp调度模型"/>
+
+
+    
+
+</head>
+<body><div class="sidebar animated fadeInDown ">
+    <div class="logo-title">
+        <div class="title">
+            <img src="/images/profile.png" alt="profile picture">
+            <h3 title=""><a href="/">ZYF-CLOUD</a></h3>
+            <div class="description">
+                <p>some sharing</p>
+            </div>
+        </div>
+    </div>
+    <ul class="social-links">
+        
+    </ul>
+    <div class="footer">
+        <div class="by_farbox">&copy; zyfcloud  2021 </div>
+    </div>
+</div>
+<div class="main">
+    <div class="page-top  animated fadeInDown ">
+    <a role="button" class="navbar-burger" data-target="navMenu" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+    </a>
+    <ul class="nav" id="navMenu">
+        
+        
+            
+            <li><a 
+                   href="/"
+                        
+                   title="">Home</a></li>
+        
+            
+            <li><a 
+                   href="/post/"
+                        
+                   title="">Posts</a></li>
+        
+            
+            <li><a 
+                   href="/about/"
+                        
+                   title="">About</a></li>
+        
+        
+        
+            <li class="theme-switch-item">
+                <a class="theme-switch" title="Switch Theme">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+    <div class="autopagerize_page_element">
+        <div class="content">
+    <div class="post  animated fadeInDown ">
+        <div class="post-content">
+            
+            <div class="post-title">
+                <h3>本文介绍go调度模型gmp调度模型</h3>
+                
+                    <div class="info">
+                        <em class="fas fa-calendar-day"></em>
+                        <span class="date"> Sun, May 30, 2021 
+                                           </span>
+                        <em class="fas fa-stopwatch"></em>
+                        <span class="reading-time">One-minute read</span>
+                    </div>
+                
+            </div>
+
+            <p>本文介绍go调度模型gmp调度模型</p>
+<p>一些问题：
+（1）m的生命周期，什么时候生成以及什么时候删除。
+如果一阻塞就创建新的线程的话，那和多线程有什么区别？？
+10000个任务，每个任务都是先打印“任务开始”，然后sleep 20s，然后打印“任务结束”</p>
+<p>首先来看一下m创建的前提：
+M 何时创建：没有足够的 M 来关联 P 并运行其中的可运行的 G。比如所有的 M 此时都阻塞住了，而 P 中还有很多就绪任务，就会去寻找空闲的 M，而没有空闲的，就会去创建新的 M。</p>
+<p>用多线程的方式是：每来一个任务，创建一个线程，线程执行完之后销毁
+协程的方式是：每来一个任务，go一个协程。</p>
+<p>其实最终执行的实体都是cpu，每创建一个线程肯定是不好的，每个线程占用4m，会有自己的栈空间。
+那协程的话，不会创建这么多的线程出来吗？</p>
+<p>比如我有4个processor，此时建了四个m去对应，然后其他任务来的时候，由于这四个m进入到了sleep状态（并不是阻塞状态），其实已经空闲了，所以可以切换到别的goroutine去执行别的goroutine的任务。
+直到20s时间到了之后，p中的任务又开始变得就绪了，又可以调度到m上执行了，然后打印“任务结束”。</p>
+<p>所以说调度器的设计策略一个很重要的功能就是复用线程：避免频繁的创建、销毁线程，而是对线程的复用。</p>
+<p>（2）为什么GOMAXPROCS的个数是限制在cpu核心数，而m最多可以有10000个？怎么理解。
+很好理解，对于多核cpu来说，并行的任务最多只有cpu核心数大小，其实最多只会有cpu核心数的m同时运行。</p>
+<p>m通过p的队列来关联goroutine，同时运行的时候，只需要cpu核心数的队列就够了，多了没用。</p>
+<p>而m为什么就可以很多呢？因为m可能会因为系统调用（io等待）阻塞住，这个时候新创建一个线程出来就很好了。</p>
+<p>有几个概念需要厘清：
+（2.1）多线程并发高并不代表处理完所有任务的总时间会更快。
+对于io密集型任务来说，是的，因为io等待的是不占用cpu的。
+对于cpu密集型的任务来说的，线程开的多，对执行完所有任务的总时间并不会带来什么好处，
+因为cpu就那么多，干活的就那么多，反而会因为上下文的线程的切换导致总时间更差。
+（但是并发高是实实在在的，比如可以同时接受到请求就变多了。）
+（还有一点是多线程可以利用多核的能力，即并行的能力，这个也是实实在在的）</p>
+<p>所以总的来说多线程有什么好处呢？
+一个就是可以利用多核的能力，一个是对于io密集型的任务来说优势比较大。
+所以一般设置的线程数为2*cpu核心数。</p>
+<p>（2.2）既然cpu密集型的任务对总时间效果并不是很高，那为什么说go快呢？
+通过第一个，可以知道多线程确实是有好处的，那么go相对于多线程来说，可以复用多线程，
+不用频繁的销毁线程，在用户态进行任务的调用分配，是不是优势就更大了。</p>
+<p>那么既然io阻塞的时候会创建出新的线程，而其他的任务如果是cpu密集型的话又没有什么优势的话，那么还需要这么一个goroutine有什么用？
+这个恰恰正是goroutine的作用，io阻塞的时候，创建新的线程去承接processor去执行任务，
+也就是说将一些cpu密集型的任务用p的队列放到一起来了，排队执行，
+而不是每一个cpu密集型的任务都创建出一个线程出来，因为没有必要，最多创建出cpu核心数个线程就够了。
+其他的么放在用户态的队列里排队就好了。。。。</p>
+<p>（3）为什么要有p，即gm模型有什么问题？？？</p>
+<p>（4）g0和m0有什么作用</p>
+<p>（5）sysmon这些有什么作用？？
+<a href="https://gocn.vip/topics/10977">https://gocn.vip/topics/10977</a>
+<a href="https://draveness.me/golang/docs/part3-runtime/ch06-concurrency/golang-sysmon/">https://draveness.me/golang/docs/part3-runtime/ch06-concurrency/golang-sysmon/</a></p>
+<p>（6）stw是什么？？？为什么gc的时候需要stw？？</p>
+<p>STW 可以是 Stop the World 的缩写，也可以是 Start the World 的缩写。通常意义上指指代从 Stop the World 这一动作发生时到 Start the World 这一动作发生时这一段时间间隔，即万物静止。STW 在垃圾回收过程中为了保证实现的正确性、防止无止境的内存增长等问题而不可避免的需要停止赋值器进一步操作对象图的一段过程。</p>
+<p>在这个过程中整个用户代码被停止或者放缓执行， STW 越长，对用户代码造成的影响（例如延迟）就越大，早期 Go 对垃圾回收器的实现中 STW 长达几百毫秒，对时间敏感的实时通信等应用程序会造成巨大的影响。我们来看一个例子：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+	<span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>() {
+		<span style="color:#66d9ef">for</span> {
+		}
+	}()
+	<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Sleep</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Millisecond</span>)
+	<span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">GC</span>()
+	println(<span style="color:#e6db74">&#34;OK&#34;</span>)
+}
+</code></pre></div><p>上面的这个程序在 Go 1.14 以前永远都不会输出 OK，其罪魁祸首是进入 STW 这一操作的执行无限制的被延长。</p>
+<p>尽管 STW 如今已经优化到了半毫秒级别以下，但这个程序被卡死原因是由于需要进入 STW 导致的。原因在于，GC 在需要进入 STW 时，需要通知并让所有的用户态代码停止，但是 for {} 所在的 goroutine 永远都不会被中断，从而始终无法进入 STW 阶段。实际实践中也是如此，当程序的某个 goroutine 长时间得不到停止，强行拖慢进入 STW 的时机，这种情况下造成的影响（卡死）是非常可怕的。好在自 Go 1.14 之后，这类 goroutine 能够被异步地抢占，从而使得进入 STW 的时间不会超过抢占信号触发的周期，程序也不会因为仅仅等待一个 goroutine 的停止而停顿在进入 STW 之前的操作上。</p>
+<h3 id="1gmp模型介绍">1、GMP模型介绍</h3>
+<p>部署应用的时候查看日志频繁出现如下的日志打印：</p>
+<p>参考文章：</p>
+<p>线程/协程参考
+<a href="https://developer.51cto.com/art/202012/634647.htm">https://developer.51cto.com/art/202012/634647.htm</a>
+<a href="https://blog.csdn.net/zollty/article/details/53944539">https://blog.csdn.net/zollty/article/details/53944539</a>
+<a href="https://zhuanlan.zhihu.com/p/111346689">https://zhuanlan.zhihu.com/p/111346689</a></p>
+</div>
+        <div class="post-footer">
+            <div class="info">
+                <span class="separator"><a class="category" href="/categories/%E5%B9%B6%E5%8F%91/">并发</a></span>
+                <span class="separator"><a class="tag" href="/tags/go/">go</a><a class="tag" href="/tags/concurrency/">concurrency</a></span>
+            </div>
+        </div>
+
+        
+    </div>
+
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript"
+        src="/js/medium-zoom.min.2d6fd0be87fa98f0c9b4dc2536b312bbca48757f584f6ea1f394abc9bcc38fbc.js"
+        integrity="sha256-LW/Qvof6mPDJtNwlNrMSu8pIdX9YT26h85SrybzDj7w="
+        crossorigin="anonymous"></script></body>
+
+</html>
