@@ -162,12 +162,31 @@
 <p>（7）现在还会有stw吗？？
 有的，
 （1）在任务开启的时候需要扫描整个根对象，这个阶段会开始屏障功能。</p>
-<p>（2）由于对栈上指针的写入添加写屏障的功能成本很高，所以go仅对堆上加写屏障功能，扫描结束之后再对栈进行一次性的扫描，这个时候需要stw。大约在10-100ms</p>
+<p>（2）由于对栈上指针的写入添加写屏障的功能成本很高，所以go仅对堆上加写屏障功能，扫描结束之后再对栈进行一次性的扫描，这个时候需要stw。大约在10-100ms。</p>
+<p>不过在1.8之后会有混合写屏障，这个时候不会有rescan了。
+但是还是会有stw，为什么呢？？？？具体看混合写屏障。。。。。</p>
 <p>（8）什么时候会触发gc？</p>
 <p>（8.1）手动gc （8.2）申请内存的时候，检测当前已分配的内存是否大于上次gc之后剩余的内存的两倍，若是则触发</p>
 <p>（8.3）sysmon线程会检测上次gc的时间是否超过了两分钟，超过就会进行forcegc（比如这个issue上提到的：https://github.com/golang/go/issues/12026）</p>
 <p>（8）现在的整个gc的步骤：
 <img src="/images/GC-Algorithm-Phases.png" alt="avatar"></p>
+<p>主要分为四个步骤：
+(1)、stw&ndash;&gt;write barrier（开启写屏障）
+（2）、marking标记
+（3）、Mark Termination（因为混合写屏障的逻辑会重新扫描部分的根对象，不会rescan整个栈空间，但还是要求stw），结束之后关闭写屏障
+（4）、sweep</p>
+<p>（9）为什么1.8之前需要rescaen栈空间，栈不是会自动回收的吗？为什么要扫描栈？
+因为栈会引用到堆上的数据，如果堆上的数据被标记为白色，但是被栈上的对象引用了，这个时候就会导致堆上的对象被误删。所以需要扫描栈的引用关系，如果引用了堆上的对象，这个堆上的对象就会被标记为黑色。
+但是在1.8之后引入了混合写屏障机制，就不用重新rescan了。
+具体可见刘丹冰的适配。</p>
+<p>参考：</p>
+<p><a href="https://draveness.me/golang/docs/part3-runtime/ch07-memory/golang-memory-allocator/">https://draveness.me/golang/docs/part3-runtime/ch07-memory/golang-memory-allocator/</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/74853110">https://zhuanlan.zhihu.com/p/74853110</a></p>
+<p><a href="https://www.cnblogs.com/fanzou/p/13503974.html?ivk_sa=1024320u">https://www.cnblogs.com/fanzou/p/13503974.html?ivk_sa=1024320u</a></p>
+<p><a href="https://www.bilibili.com/video/BV1wz4y1y7Kd?p=10&amp;spm_id_from=pageDriver">https://www.bilibili.com/video/BV1wz4y1y7Kd?p=10&amp;spm_id_from=pageDriver</a></p>
+<p><a href="https://blog.csdn.net/weixin_42282999/article/details/106689805">https://blog.csdn.net/weixin_42282999/article/details/106689805</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/264789260">https://zhuanlan.zhihu.com/p/264789260</a></p>
+<p><a href="https://www.cnblogs.com/fanzou/p/13503974.html?ivk_sa=1024320u">https://www.cnblogs.com/fanzou/p/13503974.html?ivk_sa=1024320u</a></p>
 </div>
         <div class="post-footer">
             <div class="info">
