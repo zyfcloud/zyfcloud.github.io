@@ -11,6 +11,12 @@
     <loc>https://zhuyunfeng111.github.io/tags/concurrency/</loc>
     <lastmod>2021-05-30T17:30:13+08:00</lastmod>
   </url><url>
+    <loc>https://zhuyunfeng111.github.io/tags/gc/</loc>
+    <lastmod>2021-05-30T17:30:13+08:00</lastmod>
+  </url><url>
+    <loc>https://zhuyunfeng111.github.io/categories/gc/</loc>
+    <lastmod>2021-05-30T17:30:13+08:00</lastmod>
+  </url><url>
     <loc>https://zhuyunfeng111.github.io/tags/go/</loc>
     <lastmod>2021-05-30T17:30:13+08:00</lastmod>
   </url><url>
@@ -30,6 +36,9 @@
     <lastmod>2021-05-30T17:30:13+08:00</lastmod>
   </url><url>
     <loc>https://zhuyunfeng111.github.io/categories/%E5%B9%B6%E5%8F%91/</loc>
+    <lastmod>2021-05-30T17:30:13+08:00</lastmod>
+  </url><url>
+    <loc>https://zhuyunfeng111.github.io/post/go-gc/</loc>
     <lastmod>2021-05-30T17:30:13+08:00</lastmod>
   </url><url>
     <loc>https://zhuyunfeng111.github.io/post/go-concurrency/</loc>
@@ -83,12 +92,6 @@
     <loc>https://zhuyunfeng111.github.io/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/</loc>
     <lastmod>2021-05-05T16:30:13+08:00</lastmod>
   </url><url>
-    <loc>https://zhuyunfeng111.github.io/bak/</loc>
-    <lastmod>2020-05-05T16:30:13+08:00</lastmod>
-  </url><url>
-    <loc>https://zhuyunfeng111.github.io/tags/ipvs/</loc>
-    <lastmod>2020-05-05T16:30:13+08:00</lastmod>
-  </url><url>
     <loc>https://zhuyunfeng111.github.io/tags/k8s/</loc>
     <lastmod>2020-05-05T16:30:13+08:00</lastmod>
   </url><url>
@@ -98,13 +101,7 @@
     <loc>https://zhuyunfeng111.github.io/post/k8s-controller2/</loc>
     <lastmod>2020-05-05T16:30:13+08:00</lastmod>
   </url><url>
-    <loc>https://zhuyunfeng111.github.io/bak/k8s-ipvs-conn_reuse_mode/</loc>
-    <lastmod>2020-05-05T16:30:13+08:00</lastmod>
-  </url><url>
     <loc>https://zhuyunfeng111.github.io/post/k8s-crd/</loc>
-    <lastmod>2020-05-05T16:30:13+08:00</lastmod>
-  </url><url>
-    <loc>https://zhuyunfeng111.github.io/categories/%E9%97%AE%E9%A2%98%E5%88%86%E6%9E%90/</loc>
     <lastmod>2020-05-05T16:30:13+08:00</lastmod>
   </url><url>
     <loc>https://zhuyunfeng111.github.io/tags/gin/</loc>

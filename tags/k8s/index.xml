@@ -26,15 +26,6 @@
     </item>
     
     <item>
-      <title>k8s:ipvs的conn_reuse_mode问题</title>
-      <link>https://zhuyunfeng111.github.io/bak/k8s-ipvs-conn_reuse_mode/</link>
-      <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
-      
-      <guid>https://zhuyunfeng111.github.io/bak/k8s-ipvs-conn_reuse_mode/</guid>
-      <description>本文介绍ipvs模式下因为conn_reuse_mode导致连接复用产生的问题</description>
-    </item>
-    
-    <item>
       <title>k8s:深入解析Kubebuilder</title>
       <link>https://zhuyunfeng111.github.io/post/k8s-crd/</link>
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>

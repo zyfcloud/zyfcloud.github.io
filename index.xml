@@ -8,6 +8,15 @@
     <language>en-us</language>
     <lastBuildDate>Sun, 30 May 2021 17:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/index.xml" rel="self" type="application/rss+xml" />
     <item>
+      <title>本文介绍go的gc相关知识</title>
+      <link>https://zhuyunfeng111.github.io/post/go-gc/</link>
+      <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
+      
+      <guid>https://zhuyunfeng111.github.io/post/go-gc/</guid>
+      <description>本文介绍go的gc相关知识（比较乱，仅用于自己的知识整理）</description>
+    </item>
+    
+    <item>
       <title>本文介绍go线程池的简单实现</title>
       <link>https://zhuyunfeng111.github.io/post/go-concurrency/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
@@ -22,7 +31,7 @@
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
       <guid>https://zhuyunfeng111.github.io/post/go-gmp%E6%A8%A1%E5%9E%8B/</guid>
-      <description>本文介绍go调度模型gmp调度模型</description>
+      <description>本文介绍go调度模型gmp调度模型（比较乱，仅用于自己的知识整理）</description>
     </item>
     
     <item>
@@ -95,15 +104,6 @@
       
       <guid>https://zhuyunfeng111.github.io/post/k8s-controller2/</guid>
       <description>本文介绍controller中infomer启动之后，自己的controller逻辑的实现</description>
-    </item>
-    
-    <item>
-      <title>k8s:ipvs的conn_reuse_mode问题</title>
-      <link>https://zhuyunfeng111.github.io/bak/k8s-ipvs-conn_reuse_mode/</link>
-      <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
-      
-      <guid>https://zhuyunfeng111.github.io/bak/k8s-ipvs-conn_reuse_mode/</guid>
-      <description>本文介绍ipvs模式下因为conn_reuse_mode导致连接复用产生的问题</description>
     </item>
     
     <item>
