@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html  dir="ltr" lang="en" data-theme=""><head>
-    <title> zyfcloud | map </title>
+    <title> zyfcloud | 本文介绍go基础类型chan的原理 </title>
 
     
     <meta charset="utf-8"><meta name="generator" content="Hugo 0.81.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-    <meta name="description" content="some sharing">
+    <meta name="description" content="本文介绍go基础类型chan的原理">
     
     
     
@@ -32,10 +32,9 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 
-    <link rel="canonical" href="/tags/map/">
+    <link rel="canonical" href="/post/go-base-channel/">
 
     
-    <link rel="alternate" type="application/rss+xml" href="/tags/map/index.xml" title="ZyfCloud Site" />
     
     
     
@@ -54,8 +53,8 @@
                 crossorigin="anonymous"></script>
     
     <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="map"/>
-<meta name="twitter:description" content="some sharing"/>
+<meta name="twitter:title" content="本文介绍go基础类型chan的原理"/>
+<meta name="twitter:description" content="本文介绍go基础类型chan的原理"/>
 
 
     
@@ -119,23 +118,69 @@
 
     <div class="autopagerize_page_element">
         <div class="content">
-    <div class="archive  animated fadeInDown ">
-        <ul class="list-with-title">
+    <div class="post  animated fadeInDown ">
+        <div class="post-content">
             
-                <div class="listing-title">2021</div>
+            <div class="post-title">
+                <h3>本文介绍go基础类型chan的原理</h3>
                 
-                    <ul class="listing">
-                        <div class="listing-item">
-                            <div class="listing-post"><a href="/post/go-base-map/" title="本文介绍go基础类型map的原理">本文介绍go基础类型map的原理</a>
-                                <div class="post-time"><span class="date"> May 30 
-                                                                            </span></div>
-                            </div>
-                        </div>
-                    </ul>
+                    <div class="info">
+                        <em class="fas fa-calendar-day"></em>
+                        <span class="date"> Sun, May 30, 2021 
+                                           </span>
+                        <em class="fas fa-stopwatch"></em>
+                        <span class="reading-time">One-minute read</span>
+                    </div>
                 
-            
-        </ul>
+            </div>
+
+            <p>本文介绍go基础类型chan的原理（比较乱，仅用于自己的知识整理）</p>
+<p>首先抛出几个问题：
+（1）、channel的本质是什么？？</p>
+<pre><code>（2）、那阻塞具体是怎么做的呢？
+</code></pre>
+<p>（1）什么是csp模型，讲讲并发模型中的csp模型相对于共享内存模型的优势
+答：csp模型就是communication sequency processor（通信顺序进程），我的理解呢就是按照通信的顺序来定义的进程模型，比如channel，就是生产消费的方式来进行通信，并且通过阻塞的方式来影响进程的执行先后顺序。</p>
+<pre><code>那么并发模型中的csp模型和共享内存模型有哪些优势呢？？？
+（1）channel底层其实也是用的锁机制来实现的，其实channel只是对共享内存模型的更高一层的抽象，
+    通信的方式更符合进程间/线程间执行顺序的逻辑，比如我这个线程执行结束了，然后要通知别的线程去执行。
+    可以有多种方式：
+    （1）共享内存：在公共的地方设置一个标志位，然后说明我执行完了
+    （2）actor模型，直接告诉你你可以开始执行了
+    （3）channel模型，通过一个channel中间件的方式来告诉你
+    其中（2）（3）都属于csp并发模型的方式，可以看出csp的方式其实更符合正常的逻辑思维和业务的逻辑顺序。
+    所以说其实csp模型是对共享内存模型的更高级的抽象，可以用业务的方式来进行并发编程，可以用csp的方式的话可以尽量用csp模型。
+    这样可以更贴近业务去思考问题。
+
+（2）go的channel模型抽象出来之后，在调度层面对线程的冲突上面可以做更好的支持。
+    比如：同一个channel，调度器层面保证当有资源的时候同时只能有一个线程被唤醒，这样就天然的避免了线程之间的冲突。
+
+（3）通过channel的方式使得模块之间可以更好的解耦，模块之间没有相互依赖关系。
+
+参考：面向信仰编程：https://draveness.me/whys-the-design-communication-shared-memory/
+</code></pre>
+<p>（2）channel的底层数据结构是什么样的？？
+xxxxx</p>
+<p>参考：
+（1）https://juejin.cn/post/6844903821349502990
+（2）go问题集。。。</p>
+<p>接下来就可以来回答之前的问题了：
+（1）、channel的本质是什么？？
+本质就是一个队列，各种channel中值的传递就是值的拷贝。</p>
+<p>（2）、那阻塞具体是怎么做的呢？
+阻塞的话，就是会调用go调度器让出当前的协程。
+然后如果有另一个协程来读取或者的写入，会唤醒在channel上的sudo goroutine。</p>
+</div>
+        <div class="post-footer">
+            <div class="info">
+                <span class="separator"><a class="category" href="/categories/chan/">chan</a></span>
+                <span class="separator"><a class="tag" href="/tags/go/">go</a><a class="tag" href="/tags/chan/">chan</a></span>
+            </div>
+        </div>
+
+        
     </div>
+
 
         </div>
     </div>
