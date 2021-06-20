@@ -129,7 +129,7 @@
                         <span class="date"> Sun, May 30, 2021 
                                            </span>
                         <em class="fas fa-stopwatch"></em>
-                        <span class="reading-time">2-minute read</span>
+                        <span class="reading-time">3-minute read</span>
                     </div>
                 
             </div>
@@ -157,7 +157,24 @@
 </code></pre></div><p>当然这种方式会有问题，如果地址很多的话起很多的线程会导致goroutine创建太多，所以还是需要线程池来控制一下，并且需要拿到请求的结果。</p>
 <p>所以就会有如下的需求：</p>
 <pre><code>问题：有n个任务需要并发处理，控制每次并发最多10个
-</code></pre><h3 id="2并发请求并且控制并发数不要求拿返回值">2、并发请求，并且控制并发数，不要求拿返回值</h3>
+</code></pre><h3 id="11并发请求并且控制并发数但是每次都会生成和销毁线程">1.1、并发请求，并且控制并发数，但是每次都会生成和销毁线程：</h3>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">limit</span> = make(<span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">int</span>, <span style="color:#ae81ff">5</span>)
+	<span style="color:#a6e22e">workerList</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;baidu.com&#34;</span>, <span style="color:#e6db74">&#34;sina.com&#34;</span>}
+	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">w</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">workerList</span> {
+		<span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">w</span> <span style="color:#66d9ef">string</span>) {
+			<span style="color:#a6e22e">limit</span> <span style="color:#f92672">&lt;-</span> <span style="color:#ae81ff">1</span>
+			<span style="color:#75715e">// Do something for w
+</span><span style="color:#75715e"></span>			<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">w</span>)
+			<span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">limit</span>
+		}(<span style="color:#a6e22e">w</span>)
+	}
+
+	<span style="color:#66d9ef">for</span> {
+	}
+}
+</code></pre></div><p>这个时候是可以控制住并发数的，但是需要频繁的创建和销毁goroutine，不合适不合适。。。</p>
+<h3 id="2并发请求并且控制并发数不要求拿返回值">2、并发请求，并且控制并发数，不要求拿返回值</h3>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
 
 	<span style="color:#a6e22e">urlList</span> <span style="color:#f92672">:=</span> []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;url1&#34;</span>, <span style="color:#e6db74">&#34;url2&#34;</span>, <span style="color:#e6db74">&#34;url3&#34;</span>, <span style="color:#e6db74">&#34;url4&#34;</span>, <span style="color:#e6db74">&#34;url5&#34;</span>, <span style="color:#e6db74">&#34;url6&#34;</span>}
@@ -219,11 +236,17 @@
 </span><span style="color:#75715e"></span>	<span style="color:#75715e">// 	respList = append(respList, resp)
 </span><span style="color:#75715e"></span>	<span style="color:#75715e">// }
 </span><span style="color:#75715e"></span>
-	<span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>() {
-		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">resp</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">respChan</span> { <span style="color:#75715e">// Consume2
-</span><span style="color:#75715e"></span>			<span style="color:#a6e22e">respList</span> = append(<span style="color:#a6e22e">respList</span>, <span style="color:#a6e22e">resp</span>)
-		}
-	}()
+	<span style="color:#75715e">// 错误版本2:主线程退出的时候，会导致最后一个append还没有执行完
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// go func() {
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// 	for resp := range respChan { // Consume2
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// 		respList = append(respList, resp)
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// 	}
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// }()
+</span><span style="color:#75715e"></span>
+	<span style="color:#75715e">// 本版本可以去掉wg
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">k</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">k</span> &lt; len(<span style="color:#a6e22e">urlList</span>); <span style="color:#a6e22e">k</span><span style="color:#f92672">++</span> {
+		<span style="color:#a6e22e">respList</span> = append(<span style="color:#a6e22e">respList</span>, <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">respChan</span>)
+	}
 
 	<span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Wait</span>()
 	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">respList</span>)

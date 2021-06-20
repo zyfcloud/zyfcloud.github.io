@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html  dir="ltr" lang="en" data-theme=""><head>
-    <title> zyfcloud | prometheus </title>
+    <title> zyfcloud | prometheus底层存储 </title>
 
     
     <meta charset="utf-8"><meta name="generator" content="Hugo 0.81.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-    <meta name="description" content="some sharing">
+    <meta name="description" content="本文介绍几种prometheus的底层存储">
     
     
     
@@ -32,10 +32,9 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
 
-    <link rel="canonical" href="/tags/prometheus/">
+    <link rel="canonical" href="/post/prom-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/">
 
     
-    <link rel="alternate" type="application/rss+xml" href="/tags/prometheus/index.xml" title="ZyfCloud Site" />
     
     
     
@@ -54,8 +53,8 @@
                 crossorigin="anonymous"></script>
     
     <meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="prometheus"/>
-<meta name="twitter:description" content="some sharing"/>
+<meta name="twitter:title" content="prometheus底层存储"/>
+<meta name="twitter:description" content="本文介绍几种prometheus的底层存储"/>
 
 
     
@@ -119,68 +118,69 @@
 
     <div class="autopagerize_page_element">
         <div class="content">
-    <div class="archive  animated fadeInDown ">
-        <ul class="list-with-title">
+    <div class="post  animated fadeInDown ">
+        <div class="post-content">
             
-                <div class="listing-title">2021</div>
+            <div class="post-title">
+                <h3>prometheus底层存储</h3>
                 
-                    <ul class="listing">
-                        <div class="listing-item">
-                            <div class="listing-post"><a href="/post/prom-%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/" title="基于prometheus的监控系统设计">基于prometheus的监控系统设计</a>
-                                <div class="post-time"><span class="date"> May 5 
-                                                                            </span></div>
-                            </div>
-                        </div>
-                    </ul>
+                    <div class="info">
+                        <em class="fas fa-calendar-day"></em>
+                        <span class="date"> Wed, May 5, 2021 
+                                           </span>
+                        <em class="fas fa-stopwatch"></em>
+                        <span class="reading-time">One-minute read</span>
+                    </div>
                 
-                    <ul class="listing">
-                        <div class="listing-item">
-                            <div class="listing-post"><a href="/post/prom-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/" title="prometheus高可用架构">prometheus高可用架构</a>
-                                <div class="post-time"><span class="date"> May 5 
-                                                                            </span></div>
-                            </div>
-                        </div>
-                    </ul>
-                
-                    <ul class="listing">
-                        <div class="listing-item">
-                            <div class="listing-post"><a href="/post/prom-staleness/" title="prometheus陈旧性">prometheus陈旧性</a>
-                                <div class="post-time"><span class="date"> May 5 
-                                                                            </span></div>
-                            </div>
-                        </div>
-                    </ul>
-                
-                    <ul class="listing">
-                        <div class="listing-item">
-                            <div class="listing-post"><a href="/post/prom-resolved/" title="prometheus恢复机制">prometheus恢复机制</a>
-                                <div class="post-time"><span class="date"> May 5 
-                                                                            </span></div>
-                            </div>
-                        </div>
-                    </ul>
-                
-                    <ul class="listing">
-                        <div class="listing-item">
-                            <div class="listing-post"><a href="/post/prom-%E5%BA%95%E5%B1%82%E5%AD%98%E5%82%A8/" title="prometheus底层存储">prometheus底层存储</a>
-                                <div class="post-time"><span class="date"> May 5 
-                                                                            </span></div>
-                            </div>
-                        </div>
-                    </ul>
-                
-                    <ul class="listing">
-                        <div class="listing-item">
-                            <div class="listing-post"><a href="/post/prom-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/" title="prometheus底层存储">prometheus底层存储</a>
-                                <div class="post-time"><span class="date"> May 5 
-                                                                            </span></div>
-                            </div>
-                        </div>
-                    </ul>
-                
-            
-        </ul>
+            </div>
+
+            <p>本文介绍prometheus底层存储</p>
+<p>首先抛出几个问题：</p>
+<p>（1）prometheus的局限性：
+（1）不适用日志、事件类型的采集
+（2）pull的方式，会有时延
+（3）缺少自己官方的高可用架构
+（4）查询时间范围过长的时候数据会降采样
+（2）prometheus大内存问题：
+内存消耗主要在：
+（1）:每两个小时落盘一次，之前数据都在内存当中，所以两个小时内的数据过大的话就会导致内存占用很大
+（2）:加载历史数据时，是从磁盘到内存的，查询范围越大，内存越大。这里面有一定的优化空间。
+内存不够的时候怎么办呢？
+（1）增加内存
+（2）增加采样时间间隔
+（3）Prometheus 重启慢与热加载
+重启的时候由于要从wal文件回放到内存中，所以会导致重启的时候很慢。</p>
+<p>（4）prometheus遇到的坑
+（1）陈旧性问题：</p>
+<pre><code>    陈旧性解释：
+        就是当采样目标消失了，比如pod被删除了，此时从prometheus查询的时候发现其实还是可以查询到数据的。
+        （v2.x版本之后两种情况会查询到：avg/联邦方式）。过了一段时间（默认是五分钟）之后prometheus才会将其标记为staleness陈旧状态，在这之前prometheus将会返回五分钟内的最新数据。
+
+    目的：
+        为了不同的目标采集的时间对齐，比如pushGateWay方式，联邦方式（数据带时间戳）。
+
+    问题：
+        会导致报警触发阈值的时间拉长了，比如应用发布的时候pod状态not running的时间，按照正常的发布很快就被删除了，并不会触发我们设置的持续时间，但是因为对staleness的处理方式，所以出问题的时间就会拉长
+
+    解决方式：
+        （1）配置标记为staleness的时间，15s采样的话，一两分钟就够了。
+        （2）报警的持续时间设置稍微长一些，比如我想设置为持续五分钟就报警，query-delta=2m，那么就可以设置成7m
+
+（2）拿不到恢复值：
+        需求：业务方想要拿到报警恢复的时候的恢复值
+        解决：通过源码分析，发现拿不到恢复值的。
+</code></pre>
+</div>
+        <div class="post-footer">
+            <div class="info">
+                <span class="separator"><a class="category" href="/categories/%E5%AD%98%E5%82%A8/">存储</a></span>
+                <span class="separator"><a class="tag" href="/tags/prometheus/">prometheus</a><a class="tag" href="/tags/tsdb/">tsdb</a></span>
+            </div>
+        </div>
+
+        
     </div>
+
 
         </div>
     </div>
