@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html  dir="ltr" lang="en" data-theme=""><head>
+    <title> zyfcloud | k8s:controller开发(2) </title>
+
+    
+    <meta charset="utf-8"><meta name="generator" content="Hugo 0.81.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="description" content="本文介绍controller背后的工作流程">
+    
+    
+    
+    <link rel="stylesheet"
+        href="/css/style.min.51d7ec6db610dce512b735d5315f963c278042d026aa4ebe05a9355460b49016.css"
+        integrity="sha256-UdfsbbYQ3OUStzXVMV&#43;WPCeAQtAmqk6&#43;Bak1VGC0kBY="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    
+    <link rel="stylesheet"
+        href="/css/markupHighlight.min.f798cbda9aaa38f89eb38be6414bd082cfd71a6780375cbf67b6d2fb2b96491e.css"
+        integrity="sha256-95jL2pqqOPies4vmQUvQgs/XGmeAN1y/Z7bS&#43;yuWSR4="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    <link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" 
+    integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" 
+    crossorigin="anonymous" />
+
+    
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+    <link rel="canonical" href="/post/k8s/k8s-controller2/">
+
+    
+    
+    
+    
+    <script type="text/javascript"
+            src="/js/anatole-header.min.0c05c0a90d28c968a1cad4fb31abd0b8e1264e788ccefed022ae1d3b6f627514.js"
+            integrity="sha256-DAXAqQ0oyWihytT7MavQuOEmTniMzv7QIq4dO29idRQ="
+            crossorigin="anonymous"></script>
+
+
+    
+        
+        
+        <script type="text/javascript"
+                src="/js/anatole-theme-switcher.min.7fd87181cdd7e8413aa64b6867bb32f3a8dc242e684fc7d5bbb9f600dbc2b6eb.js"
+                integrity="sha256-f9hxgc3X6EE6pktoZ7sy86jcJC5oT8fVu7n2ANvCtus="
+                crossorigin="anonymous"></script>
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="k8s:controller开发(2)"/>
+<meta name="twitter:description" content="本文介绍controller背后的工作流程"/>
+
+
+    
+
+</head>
+<body><div class="sidebar animated fadeInDown ">
+    <div class="logo-title">
+        <div class="title">
+            <img src="/images/profile.png" alt="profile picture">
+            <h3 title=""><a href="/">ZYF-CLOUD</a></h3>
+            <div class="description">
+                <p>some sharing</p>
+            </div>
+        </div>
+    </div>
+    <ul class="social-links">
+        
+    </ul>
+    <div class="footer">
+        <div class="by_farbox">&copy; zyfcloud  2021 </div>
+    </div>
+</div>
+<div class="main">
+    <div class="page-top  animated fadeInDown ">
+    <a role="button" class="navbar-burger" data-target="navMenu" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+    </a>
+    <ul class="nav" id="navMenu">
+        
+        
+            
+            <li><a 
+                   href="/"
+                        
+                   title="">Home</a></li>
+        
+            
+            <li><a 
+                   href="/post/"
+                        
+                   title="">Posts</a></li>
+        
+            
+            <li><a 
+                   href="/about/"
+                        
+                   title="">About</a></li>
+        
+        
+        
+            <li class="theme-switch-item">
+                <a class="theme-switch" title="Switch Theme">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+    <div class="autopagerize_page_element">
+        <div class="content">
+    <div class="post  animated fadeInDown ">
+        <div class="post-content">
+            
+            <div class="post-title">
+                <h3>k8s:controller开发(2)</h3>
+                
+                    <div class="info">
+                        <em class="fas fa-calendar-day"></em>
+                        <span class="date"> Tue, May 5, 2020 
+                                           </span>
+                        <em class="fas fa-stopwatch"></em>
+                        <span class="reading-time">One-minute read</span>
+                    </div>
+                
+            </div>
+
+            <p>本文介绍controller中infomer启动之后，自己的controller逻辑的实现</p>
+<p>Q：indexer的作用，自定义控制器为什么不能直接拿回调过来的资源参数和实际的状态进行对比，而是要重新到indexer里取一下？
+A：indexer是一个本地缓存，也不是controller里的所有事件都只是通过event的object就够了，</p>
+<p>比如有些可能需要list全部资源，这个时候如果本地没有缓存的话重新去apiserver获取就不合适了。</p>
+<p>那么这个前提下对于事件触发类型的，把资源对象整个都放到queue里的话就会显得浪费了，因为本地既然都已经有这个对象了。</p>
+<p>那么问题来了，会不会我处理的逻辑时间很长，从indexer拿到的资源已经被下一次事件更新过了的了，有关系吗？</p>
+<p>也没关系，因为就是需要达到最终的状态，所以只需要拿当前的期望状态即可，之前的期望状态其实已经没有用了。</p>
+<p>Q：Informer 中为什么需要引入 Resync 机制？</p>
+<p>Q：indexer的store和index是啥？</p>
+</div>
+        <div class="post-footer">
+            <div class="info">
+                <span class="separator"><a class="category" href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">源码分析</a></span>
+                <span class="separator"><a class="tag" href="/tags/k8s/">k8s</a><a class="tag" href="/tags/controller/">controller</a><a class="tag" href="/tags/informer/">informer</a></span>
+            </div>
+        </div>
+
+        
+    </div>
+
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript"
+        src="/js/medium-zoom.min.2d6fd0be87fa98f0c9b4dc2536b312bbca48757f584f6ea1f394abc9bcc38fbc.js"
+        integrity="sha256-LW/Qvof6mPDJtNwlNrMSu8pIdX9YT26h85SrybzDj7w="
+        crossorigin="anonymous"></script></body>
+
+</html>

@@ -9,28 +9,28 @@
     <lastBuildDate>Tue, 05 May 2020 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/tags/k8s/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>k8s:controller开发(1)</title>
-      <link>https://zhuyunfeng111.github.io/post/k8s-controller1/</link>
+      <link>https://zhuyunfeng111.github.io/post/k8s/k8s-controller1/</link>
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/k8s-controller1/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/k8s/k8s-controller1/</guid>
       <description>本文介绍controller中infomer启动的基本流程</description>
     </item>
     
     <item>
       <title>k8s:controller开发(2)</title>
-      <link>https://zhuyunfeng111.github.io/post/k8s-controller2/</link>
+      <link>https://zhuyunfeng111.github.io/post/k8s/k8s-controller2/</link>
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/k8s-controller2/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/k8s/k8s-controller2/</guid>
       <description>本文介绍controller中infomer启动之后，自己的controller逻辑的实现</description>
     </item>
     
     <item>
       <title>k8s:深入解析Kubebuilder</title>
-      <link>https://zhuyunfeng111.github.io/post/k8s-crd/</link>
+      <link>https://zhuyunfeng111.github.io/post/k8s/k8s-crd/</link>
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/k8s-crd/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/k8s/k8s-crd/</guid>
       <description>本文不对kubebuidler的使用做分析，主要对kubebuiler的生成的模板代码进行分析。</description>
     </item>
     

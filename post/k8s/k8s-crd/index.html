@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html  dir="ltr" lang="en" data-theme=""><head>
+    <title> zyfcloud | k8s:深入解析Kubebuilder </title>
+
+    
+    <meta charset="utf-8"><meta name="generator" content="Hugo 0.81.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="description" content="本文对利用Kubebuilder生成的CRD编写模板代码做代码分析">
+    
+    
+    
+    <link rel="stylesheet"
+        href="/css/style.min.51d7ec6db610dce512b735d5315f963c278042d026aa4ebe05a9355460b49016.css"
+        integrity="sha256-UdfsbbYQ3OUStzXVMV&#43;WPCeAQtAmqk6&#43;Bak1VGC0kBY="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    
+    <link rel="stylesheet"
+        href="/css/markupHighlight.min.f798cbda9aaa38f89eb38be6414bd082cfd71a6780375cbf67b6d2fb2b96491e.css"
+        integrity="sha256-95jL2pqqOPies4vmQUvQgs/XGmeAN1y/Z7bS&#43;yuWSR4="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    <link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" 
+    integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" 
+    crossorigin="anonymous" />
+
+    
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+    <link rel="canonical" href="/post/k8s/k8s-crd/">
+
+    
+    
+    
+    
+    <script type="text/javascript"
+            src="/js/anatole-header.min.0c05c0a90d28c968a1cad4fb31abd0b8e1264e788ccefed022ae1d3b6f627514.js"
+            integrity="sha256-DAXAqQ0oyWihytT7MavQuOEmTniMzv7QIq4dO29idRQ="
+            crossorigin="anonymous"></script>
+
+
+    
+        
+        
+        <script type="text/javascript"
+                src="/js/anatole-theme-switcher.min.7fd87181cdd7e8413aa64b6867bb32f3a8dc242e684fc7d5bbb9f600dbc2b6eb.js"
+                integrity="sha256-f9hxgc3X6EE6pktoZ7sy86jcJC5oT8fVu7n2ANvCtus="
+                crossorigin="anonymous"></script>
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="k8s:深入解析Kubebuilder"/>
+<meta name="twitter:description" content="本文对利用Kubebuilder生成的CRD编写模板代码做代码分析"/>
+
+
+    
+
+</head>
+<body><div class="sidebar animated fadeInDown ">
+    <div class="logo-title">
+        <div class="title">
+            <img src="/images/profile.png" alt="profile picture">
+            <h3 title=""><a href="/">ZYF-CLOUD</a></h3>
+            <div class="description">
+                <p>some sharing</p>
+            </div>
+        </div>
+    </div>
+    <ul class="social-links">
+        
+    </ul>
+    <div class="footer">
+        <div class="by_farbox">&copy; zyfcloud  2021 </div>
+    </div>
+</div>
+<div class="main">
+    <div class="page-top  animated fadeInDown ">
+    <a role="button" class="navbar-burger" data-target="navMenu" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+    </a>
+    <ul class="nav" id="navMenu">
+        
+        
+            
+            <li><a 
+                   href="/"
+                        
+                   title="">Home</a></li>
+        
+            
+            <li><a 
+                   href="/post/"
+                        
+                   title="">Posts</a></li>
+        
+            
+            <li><a 
+                   href="/about/"
+                        
+                   title="">About</a></li>
+        
+        
+        
+            <li class="theme-switch-item">
+                <a class="theme-switch" title="Switch Theme">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+    <div class="autopagerize_page_element">
+        <div class="content">
+    <div class="post  animated fadeInDown ">
+        <div class="post-content">
+            
+            <div class="post-title">
+                <h3>k8s:深入解析Kubebuilder</h3>
+                
+                    <div class="info">
+                        <em class="fas fa-calendar-day"></em>
+                        <span class="date"> Tue, May 5, 2020 
+                                           </span>
+                        <em class="fas fa-stopwatch"></em>
+                        <span class="reading-time">7-minute read</span>
+                    </div>
+                
+            </div>
+
+            <p>本文不对kubebuidler的使用做分析，主要对kubebuiler的生成的模板代码进行分析。</p>
+<p>kubebuiler生成的模板代码对调用crd的过程进行了比较多的封装，需要对内部逻辑更好的了解，才能更好的进行crd开发。
+所以看本文之前需要对Kubebuilder的基本用法基本了解。</p>
+<h4 id="一问题备忘">一、问题备忘：</h4>
+<p>带着问题去探索,首先列出自己碰到的一些困惑：</p>
+<p>1、kubebuiler的代码对调用crd的过程进行了比较多的封装，比如controller包里的Reconcile代码，具体是哪里调用到的—在controller里实现的Reconcile方法</p>
+<p>2、关于函数createStructuredListWatch和结构体informersByGVK又是什么时候执行和实现的呢？</p>
+<h4 id="二代码分析">二、代码分析：</h4>
+<p>带着问题，我们来看kubebuiler生成的crd代码：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">main</span>.<span style="color:#66d9ef">go</span>
+<span style="color:#66d9ef">var</span> (
+	<span style="color:#a6e22e">scheme</span>   = <span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">NewScheme</span>()    <span style="color:#75715e">// 定义出一个空的scheme结构体
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">setupLog</span> = <span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">Log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;setup&#34;</span>)
+)
+
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">init</span>() {
+	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;get scheme0: %v&#34;</span>, <span style="color:#a6e22e">scheme</span>)  <span style="color:#75715e">// &amp;{map[] map[] map[] map[] map[] map[] 0xc0000b2660 map[] [] pkg/runtime/scheme.go:101}
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">clientgoscheme</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">scheme</span>) <span style="color:#75715e">// 注册client-go里的预定义的结构体
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;get scheme1: %v&#34;</span>, <span style="color:#a6e22e">scheme</span>)
+	<span style="color:#a6e22e">_</span> = <span style="color:#a6e22e">appsv1alpha1</span>.<span style="color:#a6e22e">AddToScheme</span>(<span style="color:#a6e22e">scheme</span>) <span style="color:#75715e">// 注册本crd的scheme信息,eg: {apps.devops.xxx.com v1alpha1 WeApp}
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// 但是此时并没有注册crd的结构体信息
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;get scheme2: %v&#34;</span>, <span style="color:#a6e22e">scheme</span>)
+	<span style="color:#75715e">// +kubebuilder:scaffold:scheme
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>crd的gvk信息注册之后，进入main函数</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#960050;background-color:#1e0010">###</span> <span style="color:#a6e22e">main</span>.<span style="color:#66d9ef">go</span>
+<span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+
+	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">metricsAddr</span> <span style="color:#66d9ef">string</span>        <span style="color:#75715e">// 定义metricsAddr
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">enableLeaderElection</span> <span style="color:#66d9ef">bool</span> <span style="color:#75715e">// 用于组件的高可用，部署多个副本，通过选主来保证只有一个副本运行。选主的原理就是通过获得ETCD中的分布式锁成为leader，其他副本不断的去抢占这个锁，leader挂掉就会被其他副本抢占。
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">...</span>
+
+<span style="color:#75715e">////1、NewManager returns a new Manager for creating Controllers.
+</span><span style="color:#75715e">// 这里生成一个通用的manager, 此时还没有传入自定义controller的逻辑
+</span><span style="color:#75715e">// ctrl.GetConfigOrDie() 获取本地的kubeconfig配置，要是没有获取到就退出
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">mgr</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">NewManager</span>(<span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">GetConfigOrDie</span>(), <span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">Options</span>{ 
+		<span style="color:#a6e22e">Scheme</span>:             <span style="color:#a6e22e">scheme</span>,
+		<span style="color:#a6e22e">MetricsBindAddress</span>: <span style="color:#a6e22e">metricsAddr</span>,
+		<span style="color:#a6e22e">Port</span>:               <span style="color:#ae81ff">9443</span>,
+		<span style="color:#a6e22e">LeaderElection</span>:     <span style="color:#a6e22e">enableLeaderElection</span>,
+		<span style="color:#a6e22e">LeaderElectionID</span>:   <span style="color:#e6db74">&#34;8bf23ea1.xxx.xxx.com&#34;</span>,  <span style="color:#75715e">// 应该是分布式锁的id
+</span><span style="color:#75715e"></span>	})
+
+<span style="color:#75715e">//// 2、SetupWithManager用于注册controller逻辑到manager（struct controllerManager），放在leaderElectionRunnables或者是nonLeaderElectionRunnables字段里面，用于后面start的时候启动[]Runnable
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> = (<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">controllers</span>.<span style="color:#a6e22e">WeDoctorAppReconciler</span>{
+		<span style="color:#a6e22e">Client</span>: <span style="color:#a6e22e">mgr</span>.<span style="color:#a6e22e">GetClient</span>(),
+		<span style="color:#a6e22e">Log</span>:    <span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">Log</span>.<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;controllers&#34;</span>).<span style="color:#a6e22e">WithName</span>(<span style="color:#e6db74">&#34;MyApp&#34;</span>),
+		<span style="color:#a6e22e">Scheme</span>: <span style="color:#a6e22e">mgr</span>.<span style="color:#a6e22e">GetScheme</span>(),
+	}).<span style="color:#a6e22e">SetupWithManager</span>(<span style="color:#a6e22e">mgr</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">setupLog</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>, <span style="color:#e6db74">&#34;unable to create controller&#34;</span>, <span style="color:#e6db74">&#34;controller&#34;</span>, <span style="color:#e6db74">&#34;WeDoctorApp&#34;</span>)
+		<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Exit</span>(<span style="color:#ae81ff">1</span>)
+	}
+	<span style="color:#75715e">// +kubebuilder:scaffold:builder
+</span><span style="color:#75715e"></span>
+<span style="color:#75715e">//// 3、mgr.Start 启动mgr里的[]Runnable，最终调用到每个controller的start方法
+</span><span style="color:#75715e">// SetupSignalHandler设置退出信号
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">setupLog</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;starting manager&#34;</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mgr</span>.<span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">SetupSignalHandler</span>()); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">setupLog</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>, <span style="color:#e6db74">&#34;problem running manager&#34;</span>)
+		<span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Exit</span>(<span style="color:#ae81ff">1</span>)
+	}
+}
+
+</code></pre></div><p>拆分出来几个关键的步骤一一进行分析：</p>
+<p>1、生成一个manager用于注册和启动controller
+ctrl.NewManager()</p>
+<p>2、注册controller到manager
+(&amp;controllers.WeDoctorAppReconciler{
+Client: mgr.GetClient(),
+Log:    ctrl.Log.WithName(&ldquo;controllers&rdquo;).WithName(&ldquo;WeDoctorApp&rdquo;),
+Scheme: mgr.GetScheme(),
+}).SetupWithManager(mgr);</p>
+<p>3、启动controller
+mgr.Start(ctrl.SetupSignalHandler())</p>
+<h4 id="1ctrlnewmanager">1、ctrl.NewManager()</h4>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// New returns a new Manager for creating Controllers.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">config</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">rest</span>.<span style="color:#a6e22e">Config</span>, <span style="color:#a6e22e">options</span> <span style="color:#a6e22e">Options</span>) (<span style="color:#a6e22e">Manager</span>, <span style="color:#66d9ef">error</span>) {
+	<span style="color:#75715e">// Initialize a rest.config if none was specified
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">config</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;must specify Config&#34;</span>)
+	}
+	<span style="color:#75715e">// Set default values for options fields
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">options</span> = <span style="color:#a6e22e">setOptionsDefaults</span>(<span style="color:#a6e22e">options</span>)  <span style="color:#75715e">// 设置各种默认的参数
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// Create the mapper provider
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">mapper</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">MapperProvider</span>(<span style="color:#a6e22e">config</span>)  <span style="color:#75715e">// gvk，gvr等之间的转换map
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// Create the cache for the cached read client and registering informers
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">cache</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">NewCache</span>(<span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">Options</span>{<span style="color:#a6e22e">Scheme</span>: <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">Scheme</span>, <span style="color:#a6e22e">Mapper</span>: <span style="color:#a6e22e">mapper</span>, <span style="color:#a6e22e">Resync</span>: <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">SyncPeriod</span>, <span style="color:#a6e22e">Namespace</span>: <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">Namespace</span>})  
+<span style="color:#75715e">// cache主要是为了创建informers的map关系，对每个gvk都创建了相应的informer，通过 informersByGVK 这个 map 做 GVK 到 Informer 的映射，每个 Informer 会根据 ListWatch 函数对对应的 GVK 进行 List 和 Watch。
+</span><span style="color:#75715e"></span>
+	<span style="color:#a6e22e">apiReader</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Options</span>{<span style="color:#a6e22e">Scheme</span>: <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">Scheme</span>, <span style="color:#a6e22e">Mapper</span>: <span style="color:#a6e22e">mapper</span>})
+<span style="color:#75715e">// 读client
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">writeObj</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#a6e22e">cache</span>, <span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Options</span>{<span style="color:#a6e22e">Scheme</span>: <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">Scheme</span>, <span style="color:#a6e22e">Mapper</span>: <span style="color:#a6e22e">mapper</span>})
+<span style="color:#75715e">// 写client
+</span><span style="color:#75715e"></span>
+<span style="color:#f92672">...</span>
+
+	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">controllerManager</span>{
+		<span style="color:#a6e22e">config</span>:                <span style="color:#a6e22e">config</span>,
+		<span style="color:#a6e22e">scheme</span>:                <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">Scheme</span>,
+		<span style="color:#a6e22e">cache</span>:                 <span style="color:#a6e22e">cache</span>,
+		<span style="color:#a6e22e">fieldIndexes</span>:          <span style="color:#a6e22e">cache</span>,
+		<span style="color:#a6e22e">client</span>:                <span style="color:#a6e22e">writeObj</span>,
+		<span style="color:#a6e22e">apiReader</span>:             <span style="color:#a6e22e">apiReader</span>,
+		<span style="color:#a6e22e">recorderProvider</span>:      <span style="color:#a6e22e">recorderProvider</span>,
+		<span style="color:#a6e22e">resourceLock</span>:          <span style="color:#a6e22e">resourceLock</span>,
+		<span style="color:#a6e22e">mapper</span>:                <span style="color:#a6e22e">mapper</span>,
+		<span style="color:#a6e22e">metricsListener</span>:       <span style="color:#a6e22e">metricsListener</span>,
+		<span style="color:#a6e22e">internalStop</span>:          <span style="color:#a6e22e">stop</span>,
+		<span style="color:#a6e22e">internalStopper</span>:       <span style="color:#a6e22e">stop</span>,
+		<span style="color:#a6e22e">port</span>:                  <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">Port</span>,
+		<span style="color:#a6e22e">host</span>:                  <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">Host</span>,
+		<span style="color:#a6e22e">certDir</span>:               <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">CertDir</span>,
+		<span style="color:#a6e22e">leaseDuration</span>:         <span style="color:#f92672">*</span><span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">LeaseDuration</span>,
+		<span style="color:#a6e22e">renewDeadline</span>:         <span style="color:#f92672">*</span><span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">RenewDeadline</span>,
+		<span style="color:#a6e22e">retryPeriod</span>:           <span style="color:#f92672">*</span><span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">RetryPeriod</span>,
+		<span style="color:#a6e22e">healthProbeListener</span>:   <span style="color:#a6e22e">healthProbeListener</span>,
+		<span style="color:#a6e22e">readinessEndpointName</span>: <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">ReadinessEndpointName</span>,
+		<span style="color:#a6e22e">livenessEndpointName</span>:  <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">LivenessEndpointName</span>,
+	}, <span style="color:#66d9ef">nil</span>
+}
+</code></pre></div><p>NewCache的具体实现是在setOptionsDefaults中定义的：</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// New initializes and returns a new Cache.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">config</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">rest</span>.<span style="color:#a6e22e">Config</span>, <span style="color:#a6e22e">opts</span> <span style="color:#a6e22e">Options</span>) (<span style="color:#a6e22e">Cache</span>, <span style="color:#66d9ef">error</span>) {
+	<span style="color:#a6e22e">opts</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">defaultOpts</span>(<span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">opts</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+	}
+	<span style="color:#a6e22e">im</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">internal</span>.<span style="color:#a6e22e">NewInformersMap</span>(<span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">opts</span>.<span style="color:#a6e22e">Scheme</span>, <span style="color:#a6e22e">opts</span>.<span style="color:#a6e22e">Mapper</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">opts</span>.<span style="color:#a6e22e">Resync</span>, <span style="color:#a6e22e">opts</span>.<span style="color:#a6e22e">Namespace</span>)
+	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">informerCache</span>{<span style="color:#a6e22e">InformersMap</span>: <span style="color:#a6e22e">im</span>}, <span style="color:#66d9ef">nil</span>
+}
+
+<span style="color:#75715e">// NewInformersMap creates a new InformersMap that can create informers for
+</span><span style="color:#75715e">// both structured and unstructured objects.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewInformersMap</span>(<span style="color:#a6e22e">config</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">rest</span>.<span style="color:#a6e22e">Config</span>,
+	<span style="color:#a6e22e">scheme</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">Scheme</span>,
+	<span style="color:#a6e22e">mapper</span> <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">RESTMapper</span>,
+	<span style="color:#a6e22e">resync</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>,
+	<span style="color:#a6e22e">namespace</span> <span style="color:#66d9ef">string</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">InformersMap</span> {
+
+	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">InformersMap</span>{
+		<span style="color:#a6e22e">structured</span>:   <span style="color:#a6e22e">newStructuredInformersMap</span>(<span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">scheme</span>, <span style="color:#a6e22e">mapper</span>, <span style="color:#a6e22e">resync</span>, <span style="color:#a6e22e">namespace</span>),
+		<span style="color:#a6e22e">unstructured</span>: <span style="color:#a6e22e">newUnstructuredInformersMap</span>(<span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">scheme</span>, <span style="color:#a6e22e">mapper</span>, <span style="color:#a6e22e">resync</span>, <span style="color:#a6e22e">namespace</span>),
+
+		<span style="color:#a6e22e">Scheme</span>: <span style="color:#a6e22e">scheme</span>,
+	}
+}
+
+<span style="color:#75715e">// newStructuredInformersMap creates a new InformersMap for structured objects.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">newStructuredInformersMap</span>(<span style="color:#a6e22e">config</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">rest</span>.<span style="color:#a6e22e">Config</span>, <span style="color:#a6e22e">scheme</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">Scheme</span>, <span style="color:#a6e22e">mapper</span> <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">RESTMapper</span>, <span style="color:#a6e22e">resync</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>, <span style="color:#a6e22e">namespace</span> <span style="color:#66d9ef">string</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">specificInformersMap</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">newSpecificInformersMap</span>(<span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">scheme</span>, <span style="color:#a6e22e">mapper</span>, <span style="color:#a6e22e">resync</span>, <span style="color:#a6e22e">namespace</span>, <span style="color:#a6e22e">createStructuredListWatch</span>)
+}
+
+<span style="color:#75715e">// newSpecificInformersMap returns a new specificInformersMap (like
+</span><span style="color:#75715e">// the generical InformersMap, except that it doesn&#39;t implement WaitForCacheSync).
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">newSpecificInformersMap</span>(<span style="color:#a6e22e">config</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">rest</span>.<span style="color:#a6e22e">Config</span>,
+	<span style="color:#a6e22e">scheme</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">Scheme</span>,
+	<span style="color:#a6e22e">mapper</span> <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">RESTMapper</span>,
+	<span style="color:#a6e22e">resync</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Duration</span>,
+	<span style="color:#a6e22e">namespace</span> <span style="color:#66d9ef">string</span>,
+	<span style="color:#a6e22e">createListWatcher</span> <span style="color:#a6e22e">createListWatcherFunc</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">specificInformersMap</span> {
+	<span style="color:#a6e22e">ip</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">specificInformersMap</span>{
+		<span style="color:#a6e22e">config</span>:            <span style="color:#a6e22e">config</span>,
+		<span style="color:#a6e22e">Scheme</span>:            <span style="color:#a6e22e">scheme</span>,
+		<span style="color:#a6e22e">mapper</span>:            <span style="color:#a6e22e">mapper</span>,
+		<span style="color:#a6e22e">informersByGVK</span>:    make(<span style="color:#66d9ef">map</span>[<span style="color:#a6e22e">schema</span>.<span style="color:#a6e22e">GroupVersionKind</span>]<span style="color:#f92672">*</span><span style="color:#a6e22e">MapEntry</span>),
+		<span style="color:#a6e22e">codecs</span>:            <span style="color:#a6e22e">serializer</span>.<span style="color:#a6e22e">NewCodecFactory</span>(<span style="color:#a6e22e">scheme</span>),
+		<span style="color:#a6e22e">paramCodec</span>:        <span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">NewParameterCodec</span>(<span style="color:#a6e22e">scheme</span>),
+		<span style="color:#a6e22e">resync</span>:            <span style="color:#a6e22e">resync</span>,
+		<span style="color:#a6e22e">startWait</span>:         make(<span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}),
+		<span style="color:#a6e22e">createListWatcher</span>: <span style="color:#a6e22e">createListWatcher</span>,
+		<span style="color:#a6e22e">namespace</span>:         <span style="color:#a6e22e">namespace</span>,
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ip</span>
+}
+
+<span style="color:#75715e">// newListWatch returns a new ListWatch object that can be used to create a SharedIndexInformer.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">createStructuredListWatch</span>(<span style="color:#a6e22e">gvk</span> <span style="color:#a6e22e">schema</span>.<span style="color:#a6e22e">GroupVersionKind</span>, <span style="color:#a6e22e">ip</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">specificInformersMap</span>) (<span style="color:#f92672">*</span><span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">ListWatch</span>, <span style="color:#66d9ef">error</span>) {
+	<span style="color:#75715e">// Kubernetes APIs work against Resources, not GroupVersionKinds.  Map the
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// groupVersionKind to the Resource API we will use.
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">mapping</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ip</span>.<span style="color:#a6e22e">mapper</span>.<span style="color:#a6e22e">RESTMapping</span>(<span style="color:#a6e22e">gvk</span>.<span style="color:#a6e22e">GroupKind</span>(), <span style="color:#a6e22e">gvk</span>.<span style="color:#a6e22e">Version</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+	}
+
+	<span style="color:#a6e22e">client</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">apiutil</span>.<span style="color:#a6e22e">RESTClientForGVK</span>(<span style="color:#a6e22e">gvk</span>, <span style="color:#a6e22e">ip</span>.<span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">ip</span>.<span style="color:#a6e22e">codecs</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+	}
+	<span style="color:#a6e22e">listGVK</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">gvk</span>.<span style="color:#a6e22e">GroupVersion</span>().<span style="color:#a6e22e">WithKind</span>(<span style="color:#a6e22e">gvk</span>.<span style="color:#a6e22e">Kind</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;List&#34;</span>)
+	<span style="color:#a6e22e">listObj</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ip</span>.<span style="color:#a6e22e">Scheme</span>.<span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">listGVK</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+	}
+
+	<span style="color:#75715e">// Create a new ListWatch for the obj
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">cache</span>.<span style="color:#a6e22e">ListWatch</span>{
+		<span style="color:#a6e22e">ListFunc</span>: <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">opts</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">ListOptions</span>) (<span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">Object</span>, <span style="color:#66d9ef">error</span>) {
+			<span style="color:#a6e22e">res</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">listObj</span>.<span style="color:#a6e22e">DeepCopyObject</span>()
+			<span style="color:#a6e22e">isNamespaceScoped</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ip</span>.<span style="color:#a6e22e">namespace</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">mapping</span>.<span style="color:#a6e22e">Scope</span>.<span style="color:#a6e22e">Name</span>() <span style="color:#f92672">!=</span> <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">RESTScopeNameRoot</span>
+			<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Get</span>().<span style="color:#a6e22e">NamespaceIfScoped</span>(<span style="color:#a6e22e">ip</span>.<span style="color:#a6e22e">namespace</span>, <span style="color:#a6e22e">isNamespaceScoped</span>).<span style="color:#a6e22e">Resource</span>(<span style="color:#a6e22e">mapping</span>.<span style="color:#a6e22e">Resource</span>.<span style="color:#a6e22e">Resource</span>).<span style="color:#a6e22e">VersionedParams</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">opts</span>, <span style="color:#a6e22e">ip</span>.<span style="color:#a6e22e">paramCodec</span>).<span style="color:#a6e22e">Do</span>().<span style="color:#a6e22e">Into</span>(<span style="color:#a6e22e">res</span>)
+			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>, <span style="color:#a6e22e">err</span>
+		},
+		<span style="color:#75715e">// Setup the watch function
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">WatchFunc</span>: <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">opts</span> <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">ListOptions</span>) (<span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">Interface</span>, <span style="color:#66d9ef">error</span>) {
+			<span style="color:#75715e">// Watch needs to be set to true separately
+</span><span style="color:#75715e"></span>			<span style="color:#a6e22e">opts</span>.<span style="color:#a6e22e">Watch</span> = <span style="color:#66d9ef">true</span>
+			<span style="color:#a6e22e">isNamespaceScoped</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ip</span>.<span style="color:#a6e22e">namespace</span> <span style="color:#f92672">!=</span> <span style="color:#e6db74">&#34;&#34;</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">mapping</span>.<span style="color:#a6e22e">Scope</span>.<span style="color:#a6e22e">Name</span>() <span style="color:#f92672">!=</span> <span style="color:#a6e22e">meta</span>.<span style="color:#a6e22e">RESTScopeNameRoot</span>
+			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Get</span>().<span style="color:#a6e22e">NamespaceIfScoped</span>(<span style="color:#a6e22e">ip</span>.<span style="color:#a6e22e">namespace</span>, <span style="color:#a6e22e">isNamespaceScoped</span>).<span style="color:#a6e22e">Resource</span>(<span style="color:#a6e22e">mapping</span>.<span style="color:#a6e22e">Resource</span>.<span style="color:#a6e22e">Resource</span>).<span style="color:#a6e22e">VersionedParams</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">opts</span>, <span style="color:#a6e22e">ip</span>.<span style="color:#a6e22e">paramCodec</span>).<span style="color:#a6e22e">Watch</span>()
+		},
+	}, <span style="color:#66d9ef">nil</span>
+}
+</code></pre></div><p>NewCache就是为了定义出gvk到informer之间的映射关系。
+问题：关于函数createStructuredListWatch和结构体informersByGVK又是什么时候执行和实现的呢？？？</p>
+<h4 id="2setupwithmanager">2、SetupWithManager</h4>
+<p>SetupWithManager用于给manager注册controllers。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">r</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">WeDoctorAppReconciler</span>) <span style="color:#a6e22e">SetupWithManager</span>(<span style="color:#a6e22e">mgr</span> <span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">Manager</span>) <span style="color:#66d9ef">error</span> {
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">NewControllerManagedBy</span>(<span style="color:#a6e22e">mgr</span>).
+		<span style="color:#a6e22e">For</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">appsv1alpha1</span>.<span style="color:#a6e22e">WeDoctorApp</span>{}).
+		<span style="color:#a6e22e">Complete</span>(<span style="color:#a6e22e">r</span>)
+}
+</code></pre></div><p>这里用到了builer模式，NewControllerManagedBy用于生成builer结构体，for参数用于传参，除了for还有其他的一些参数eg：owns（表明当前资源拥有哪些附属资源），最后就是complete的构建过程。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// Builder builds a Controller.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Builder</span> <span style="color:#66d9ef">struct</span> {
+	<span style="color:#a6e22e">apiType</span>        <span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">Object</span>
+	<span style="color:#a6e22e">mgr</span>            <span style="color:#a6e22e">manager</span>.<span style="color:#a6e22e">Manager</span>
+	<span style="color:#a6e22e">predicates</span>     []<span style="color:#a6e22e">predicate</span>.<span style="color:#a6e22e">Predicate</span>
+	<span style="color:#a6e22e">managedObjects</span> []<span style="color:#a6e22e">runtime</span>.<span style="color:#a6e22e">Object</span>
+	<span style="color:#a6e22e">watchRequest</span>   []<span style="color:#a6e22e">watchRequest</span>
+	<span style="color:#a6e22e">config</span>         <span style="color:#f92672">*</span><span style="color:#a6e22e">rest</span>.<span style="color:#a6e22e">Config</span>
+	<span style="color:#a6e22e">ctrl</span>           <span style="color:#a6e22e">controller</span>.<span style="color:#a6e22e">Controller</span>
+	<span style="color:#a6e22e">ctrlOptions</span>    <span style="color:#a6e22e">controller</span>.<span style="color:#a6e22e">Options</span>
+	<span style="color:#a6e22e">name</span>           <span style="color:#66d9ef">string</span>
+}
+
+<span style="color:#75715e">// Build builds the Application ControllerManagedBy and returns the Controller it created.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">blder</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Builder</span>) <span style="color:#a6e22e">Build</span>(<span style="color:#a6e22e">r</span> <span style="color:#a6e22e">reconcile</span>.<span style="color:#a6e22e">Reconciler</span>) (<span style="color:#a6e22e">controller</span>.<span style="color:#a6e22e">Controller</span>, <span style="color:#66d9ef">error</span>) {
+	<span style="color:#75715e">// Set the ControllerManagedBy
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">doController</span>(<span style="color:#a6e22e">r</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+	}
+	<span style="color:#75715e">// Set the Watch
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">doWatch</span>(); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">ctrl</span>, <span style="color:#66d9ef">nil</span>
+}
+</code></pre></div><p>主要有两个方法blder.doController(r)和 blder.doWatch()
+（1）blder.doController(r)
+通过mgr.Add(c)把controller加入到manager的[]Runner里。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#75715e">// New returns a new Controller registered with the Manager.  The Manager will ensure that shared Caches have
+</span><span style="color:#75715e">// been synced before the Controller is Started.
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">New</span>(<span style="color:#a6e22e">name</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">mgr</span> <span style="color:#a6e22e">manager</span>.<span style="color:#a6e22e">Manager</span>, <span style="color:#a6e22e">options</span> <span style="color:#a6e22e">Options</span>) (<span style="color:#a6e22e">Controller</span>, <span style="color:#66d9ef">error</span>) {
+  <span style="color:#f92672">...</span>
+	<span style="color:#75715e">// Create controller with dependencies set
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">c</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">controller</span>.<span style="color:#a6e22e">Controller</span>{
+		<span style="color:#a6e22e">Do</span>:       <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">Reconciler</span>,    <span style="color:#75715e">// 传入了Do的
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">Cache</span>:    <span style="color:#a6e22e">mgr</span>.<span style="color:#a6e22e">GetCache</span>(),
+		<span style="color:#a6e22e">Config</span>:   <span style="color:#a6e22e">mgr</span>.<span style="color:#a6e22e">GetConfig</span>(),
+		<span style="color:#a6e22e">Scheme</span>:   <span style="color:#a6e22e">mgr</span>.<span style="color:#a6e22e">GetScheme</span>(),
+		<span style="color:#a6e22e">Client</span>:   <span style="color:#a6e22e">mgr</span>.<span style="color:#a6e22e">GetClient</span>(),
+		<span style="color:#a6e22e">Recorder</span>: <span style="color:#a6e22e">mgr</span>.<span style="color:#a6e22e">GetEventRecorderFor</span>(<span style="color:#a6e22e">name</span>),
+		<span style="color:#a6e22e">MakeQueue</span>: <span style="color:#66d9ef">func</span>() <span style="color:#a6e22e">workqueue</span>.<span style="color:#a6e22e">RateLimitingInterface</span> {
+			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">workqueue</span>.<span style="color:#a6e22e">NewNamedRateLimitingQueue</span>(<span style="color:#a6e22e">workqueue</span>.<span style="color:#a6e22e">DefaultControllerRateLimiter</span>(), <span style="color:#a6e22e">name</span>)
+		},
+		<span style="color:#a6e22e">MaxConcurrentReconciles</span>: <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">MaxConcurrentReconciles</span>,
+		<span style="color:#a6e22e">Name</span>:                    <span style="color:#a6e22e">name</span>,
+	}
+	<span style="color:#75715e">// Add the controller as a Manager components
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">c</span>, <span style="color:#a6e22e">mgr</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#a6e22e">c</span>)   
+}
+
+<span style="color:#75715e">// Start implements controller.Controller
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Controller</span>) <span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">stop</span> <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}) <span style="color:#66d9ef">error</span> {
+		<span style="color:#75715e">// NB(directxman12): launch the sources *before* trying to wait for the
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// caches to sync so that they have a chance to register their intendeded
+</span><span style="color:#75715e"></span>		<span style="color:#75715e">// caches.
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">watch</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">watches</span> {
+			<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Starting EventSource&#34;</span>, <span style="color:#e6db74">&#34;controller&#34;</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Name</span>, <span style="color:#e6db74">&#34;source&#34;</span>, <span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">src</span>)
+			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">src</span>.<span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">handler</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Queue</span>, <span style="color:#a6e22e">watch</span>.<span style="color:#a6e22e">predicates</span><span style="color:#f92672">...</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+				<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+			}
+		}
+     <span style="color:#f92672">...</span>
+		<span style="color:#75715e">// Launch workers to process resources
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Starting workers&#34;</span>, <span style="color:#e6db74">&#34;controller&#34;</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Name</span>, <span style="color:#e6db74">&#34;worker count&#34;</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">MaxConcurrentReconciles</span>)
+		<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">MaxConcurrentReconciles</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+			<span style="color:#75715e">// Process work items
+</span><span style="color:#75715e"></span>			<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">wait</span>.<span style="color:#a6e22e">Until</span>(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">worker</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">JitterPeriod</span>, <span style="color:#a6e22e">stop</span>)
+		}
+<span style="color:#75715e">// 通过mgr.Start(ctrl.SetupSignalHandler())会调用到每个controller里的start方法，然后调用到c.Do.Reconcile(req)，即为前面传入的options.Reconciler的Reconcile方法，options.Reconciler即为我们自己定义的WeDoctorAppReconciler
+</span><span style="color:#75715e"></span>}
+</code></pre></div><p>（2）blder.doWatch()
+doWatch的逻辑就是把watch列表塞到c.watches中，最后在(c *Controller) Start方法里会去执行start方法进行watch的。</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">blder</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Builder</span>) <span style="color:#a6e22e">doWatch</span>() <span style="color:#66d9ef">error</span> {
+	<span style="color:#75715e">// Reconcile type
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">src</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">source</span>.<span style="color:#a6e22e">Kind</span>{<span style="color:#a6e22e">Type</span>: <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">apiType</span>}
+	<span style="color:#a6e22e">hdler</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">handler</span>.<span style="color:#a6e22e">EnqueueRequestForObject</span>{}
+
+<span style="color:#75715e">// 注册的 handler，可以看到 Kubebuidler 为我们注册的 Handler 就是将发生变更的对象的 NamespacedName 入队列，如果在 Reconcile 逻辑中需要判断创建/更新/删除，需要有自己的判断逻辑。
+</span><span style="color:#75715e"></span>
+	<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">Watch</span>(<span style="color:#a6e22e">src</span>, <span style="color:#a6e22e">hdler</span>, <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">predicates</span><span style="color:#f92672">...</span>)
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+	}
+	<span style="color:#75715e">// Watches the managed types
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">obj</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">managedObjects</span> {
+		<span style="color:#a6e22e">src</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">source</span>.<span style="color:#a6e22e">Kind</span>{<span style="color:#a6e22e">Type</span>: <span style="color:#a6e22e">obj</span>}
+		<span style="color:#a6e22e">hdler</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">handler</span>.<span style="color:#a6e22e">EnqueueRequestForOwner</span>{
+			<span style="color:#a6e22e">OwnerType</span>:    <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">apiType</span>,
+			<span style="color:#a6e22e">IsController</span>: <span style="color:#66d9ef">true</span>,
+		}
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">Watch</span>(<span style="color:#a6e22e">src</span>, <span style="color:#a6e22e">hdler</span>, <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">predicates</span><span style="color:#f92672">...</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+		}
+	}
+	<span style="color:#75715e">// Do the watch requests
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">w</span> <span style="color:#f92672">:=</span> <span style="color:#66d9ef">range</span> <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">watchRequest</span> {
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">Watch</span>(<span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">src</span>, <span style="color:#a6e22e">w</span>.<span style="color:#a6e22e">eventhandler</span>, <span style="color:#a6e22e">blder</span>.<span style="color:#a6e22e">predicates</span><span style="color:#f92672">...</span>); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+		}
+	}
+	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+}
+
+<span style="color:#75715e">// Watch implements controller.Controller
+</span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Controller</span>) <span style="color:#a6e22e">Watch</span>(<span style="color:#a6e22e">src</span> <span style="color:#a6e22e">source</span>.<span style="color:#a6e22e">Source</span>, <span style="color:#a6e22e">evthdler</span> <span style="color:#a6e22e">handler</span>.<span style="color:#a6e22e">EventHandler</span>, <span style="color:#a6e22e">prct</span> <span style="color:#f92672">...</span><span style="color:#a6e22e">predicate</span>.<span style="color:#a6e22e">Predicate</span>) <span style="color:#66d9ef">error</span> {
+	<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Lock</span>()
+	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">mu</span>.<span style="color:#a6e22e">Unlock</span>()
+<span style="color:#f92672">...</span>
+	<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">watches</span> = append(<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">watches</span>, <span style="color:#a6e22e">watchDescription</span>{<span style="color:#a6e22e">src</span>: <span style="color:#a6e22e">src</span>, <span style="color:#a6e22e">handler</span>: <span style="color:#a6e22e">evthdler</span>, <span style="color:#a6e22e">predicates</span>: <span style="color:#a6e22e">prct</span>})
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Started</span> {        <span style="color:#75715e">//最开始不是Started，所以不会去watch
+</span><span style="color:#75715e"></span>		<span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Info</span>(<span style="color:#e6db74">&#34;Starting EventSource&#34;</span>, <span style="color:#e6db74">&#34;controller&#34;</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Name</span>, <span style="color:#e6db74">&#34;source&#34;</span>, <span style="color:#a6e22e">src</span>)
+		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">src</span>.<span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">evthdler</span>, <span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">Queue</span>, <span style="color:#a6e22e">prct</span><span style="color:#f92672">...</span>)
+	}
+}
+</code></pre></div><p>所以整体的逻辑就是外部写Reconciler的Reconcile方法，由内部的controller的watch方法来接收event事件，将事件塞入到queue队列里面。Controller的start方法就会去触发reconcileHandler，进一步调用到外部注入的Reconcile方法进行具体的逻辑处理。</p>
+<h4 id="3mgrstartctrlsetupsignalhandler">3、mgr.Start(ctrl.SetupSignalHandler())</h4>
+<p>通过之前的分析，接下来的mgr.Start(ctrl.SetupSignalHandler())的逻辑还是比较简单的</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-go" data-lang="go"><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">cm</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">controllerManager</span>) <span style="color:#a6e22e">Start</span>(<span style="color:#a6e22e">stop</span> <span style="color:#f92672">&lt;-</span><span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{}) <span style="color:#66d9ef">error</span> {
+	<span style="color:#75715e">// join the passed-in stop channel as an upstream feeding into cm.internalStopper
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">defer</span> close(<span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">internalStopper</span>)
+
+	<span style="color:#75715e">// initialize this here so that we reset the signal channel state on every start
+</span><span style="color:#75715e"></span>	<span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">errSignal</span> = <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">errSignaler</span>{<span style="color:#a6e22e">errSignal</span>: make(<span style="color:#66d9ef">chan</span> <span style="color:#66d9ef">struct</span>{})}
+
+	<span style="color:#75715e">// Metrics should be served whether the controller is leader or not.
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// (If we don&#39;t serve metrics for non-leaders, prometheus will still scrape
+</span><span style="color:#75715e"></span>	<span style="color:#75715e">// the pod but will get a connection refused)
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">metricsListener</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">serveMetrics</span>(<span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">internalStop</span>)
+	}
+
+	<span style="color:#75715e">// Serve health probes
+</span><span style="color:#75715e"></span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">healthProbeListener</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">serveHealthProbes</span>(<span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">internalStop</span>)
+	}
+
+	<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">startNonLeaderElectionRunnables</span>()
+
+	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">resourceLock</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+		<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">startLeaderElection</span>()
+		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+			<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+		}
+	} <span style="color:#66d9ef">else</span> {
+		<span style="color:#66d9ef">go</span> <span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">startLeaderElectionRunnables</span>()
+	}
+
+	<span style="color:#66d9ef">select</span> {
+	<span style="color:#66d9ef">case</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">stop</span>:
+		<span style="color:#75715e">// We are done
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+	<span style="color:#66d9ef">case</span> <span style="color:#f92672">&lt;-</span><span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">errSignal</span>.<span style="color:#a6e22e">GotError</span>():
+		<span style="color:#75715e">// Error starting a controller
+</span><span style="color:#75715e"></span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">cm</span>.<span style="color:#a6e22e">errSignal</span>.<span style="color:#a6e22e">Error</span>()
+	}
+}
+</code></pre></div><p>就是执行controllerManager里面的runnables。</p>
+<h4 id="三参考文章">三、参考文章：</h4>
+<p><a href="https://book.kubebuilder.io/quick-start.html">https://book.kubebuilder.io/quick-start.html</a></p>
+<p><a href="https://my.oschina.net/u/3874284/blog/3110372">https://my.oschina.net/u/3874284/blog/3110372</a></p>
+<p><a href="https://blog.csdn.net/RA681t58CJxsgCkJ31/article/details/104386126/">https://blog.csdn.net/RA681t58CJxsgCkJ31/article/details/104386126/</a></p>
+</div>
+        <div class="post-footer">
+            <div class="info">
+                <span class="separator"><a class="category" href="/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">源码分析</a></span>
+                <span class="separator"><a class="tag" href="/tags/k8s/">k8s</a></span>
+            </div>
+        </div>
+
+        
+    </div>
+
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript"
+        src="/js/medium-zoom.min.2d6fd0be87fa98f0c9b4dc2536b312bbca48757f584f6ea1f394abc9bcc38fbc.js"
+        integrity="sha256-LW/Qvof6mPDJtNwlNrMSu8pIdX9YT26h85SrybzDj7w="
+        crossorigin="anonymous"></script></body>
+
+</html>

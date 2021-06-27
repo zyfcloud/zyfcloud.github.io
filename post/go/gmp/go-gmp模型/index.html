@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html  dir="ltr" lang="en" data-theme=""><head>
+    <title> zyfcloud | 本文介绍go调度模型gmp调度模型 </title>
+
+    
+    <meta charset="utf-8"><meta name="generator" content="Hugo 0.81.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="description" content="本文介绍go调度模型gmp调度模型">
+    
+    
+    
+    <link rel="stylesheet"
+        href="/css/style.min.51d7ec6db610dce512b735d5315f963c278042d026aa4ebe05a9355460b49016.css"
+        integrity="sha256-UdfsbbYQ3OUStzXVMV&#43;WPCeAQtAmqk6&#43;Bak1VGC0kBY="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    
+    <link rel="stylesheet"
+        href="/css/markupHighlight.min.f798cbda9aaa38f89eb38be6414bd082cfd71a6780375cbf67b6d2fb2b96491e.css"
+        integrity="sha256-95jL2pqqOPies4vmQUvQgs/XGmeAN1y/Z7bS&#43;yuWSR4="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    <link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" 
+    integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" 
+    crossorigin="anonymous" />
+
+    
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+    <link rel="canonical" href="/post/go/gmp/go-gmp%E6%A8%A1%E5%9E%8B/">
+
+    
+    
+    
+    
+    <script type="text/javascript"
+            src="/js/anatole-header.min.0c05c0a90d28c968a1cad4fb31abd0b8e1264e788ccefed022ae1d3b6f627514.js"
+            integrity="sha256-DAXAqQ0oyWihytT7MavQuOEmTniMzv7QIq4dO29idRQ="
+            crossorigin="anonymous"></script>
+
+
+    
+        
+        
+        <script type="text/javascript"
+                src="/js/anatole-theme-switcher.min.7fd87181cdd7e8413aa64b6867bb32f3a8dc242e684fc7d5bbb9f600dbc2b6eb.js"
+                integrity="sha256-f9hxgc3X6EE6pktoZ7sy86jcJC5oT8fVu7n2ANvCtus="
+                crossorigin="anonymous"></script>
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="本文介绍go调度模型gmp调度模型"/>
+<meta name="twitter:description" content="本文介绍go调度模型gmp调度模型"/>
+
+
+    
+
+</head>
+<body><div class="sidebar animated fadeInDown ">
+    <div class="logo-title">
+        <div class="title">
+            <img src="/images/profile.png" alt="profile picture">
+            <h3 title=""><a href="/">ZYF-CLOUD</a></h3>
+            <div class="description">
+                <p>some sharing</p>
+            </div>
+        </div>
+    </div>
+    <ul class="social-links">
+        
+    </ul>
+    <div class="footer">
+        <div class="by_farbox">&copy; zyfcloud  2021 </div>
+    </div>
+</div>
+<div class="main">
+    <div class="page-top  animated fadeInDown ">
+    <a role="button" class="navbar-burger" data-target="navMenu" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+    </a>
+    <ul class="nav" id="navMenu">
+        
+        
+            
+            <li><a 
+                   href="/"
+                        
+                   title="">Home</a></li>
+        
+            
+            <li><a 
+                   href="/post/"
+                        
+                   title="">Posts</a></li>
+        
+            
+            <li><a 
+                   href="/about/"
+                        
+                   title="">About</a></li>
+        
+        
+        
+            <li class="theme-switch-item">
+                <a class="theme-switch" title="Switch Theme">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+    <div class="autopagerize_page_element">
+        <div class="content">
+    <div class="post  animated fadeInDown ">
+        <div class="post-content">
+            
+            <div class="post-title">
+                <h3>本文介绍go调度模型gmp调度模型</h3>
+                
+                    <div class="info">
+                        <em class="fas fa-calendar-day"></em>
+                        <span class="date"> Sun, May 30, 2021 
+                                           </span>
+                        <em class="fas fa-stopwatch"></em>
+                        <span class="reading-time">One-minute read</span>
+                    </div>
+                
+            </div>
+
+            <p>本文介绍go调度模型gmp调度模型（比较乱，仅用于自己的知识整理）</p>
+<p>一些问题：
+（1）m的生命周期，什么时候生成以及什么时候删除。
+如果一阻塞就创建新的线程的话，那和多线程有什么区别？？
+10000个任务，每个任务都是先打印“任务开始”，然后sleep 20s，然后打印“任务结束”</p>
+<p>首先来看一下m创建的前提：
+M 何时创建：没有足够的 M 来关联 P 并运行其中的可运行的 G。比如所有的 M 此时都阻塞住了，而 P 中还有很多就绪任务，就会去寻找空闲的 M，而没有空闲的，就会去创建新的 M。</p>
+<p>用多线程的方式是：每来一个任务，创建一个线程，线程执行完之后销毁
+协程的方式是：每来一个任务，go一个协程。</p>
+<p>其实最终执行的实体都是cpu，每创建一个线程肯定是不好的，每个线程占用4m，会有自己的栈空间。
+那协程的话，不会创建这么多的线程出来吗？</p>
+<p>比如我有4个processor，此时建了四个m去对应，然后其他任务来的时候，由于这四个m进入到了sleep状态（并不是阻塞状态），其实已经空闲了，所以可以切换到别的goroutine去执行别的goroutine的任务。
+直到20s时间到了之后，p中的任务又开始变得就绪了，又可以调度到m上执行了，然后打印“任务结束”。</p>
+<p>所以说调度器的设计策略一个很重要的功能就是复用线程：避免频繁的创建、销毁线程，而是对线程的复用。</p>
+<p>（2）为什么GOMAXPROCS的个数是限制在cpu核心数，而m最多可以有10000个？怎么理解。
+很好理解，对于多核cpu来说，并行的任务最多只有cpu核心数大小，其实最多只会有cpu核心数的m同时运行。</p>
+<p>m通过p的队列来关联goroutine，同时运行的时候，只需要cpu核心数的队列就够了，多了没用。</p>
+<p>而m为什么就可以很多呢？因为m可能会因为系统调用（io等待）阻塞住，这个时候新创建一个线程出来就很好了。</p>
+<p>有几个概念需要厘清：
+（2.1）多线程并发高并不代表处理完所有任务的总时间会更快。
+对于io密集型任务来说，是的，因为io等待的是不占用cpu的。
+对于cpu密集型的任务来说的，线程开的多，对执行完所有任务的总时间并不会带来什么好处，
+因为cpu就那么多，干活的就那么多，反而会因为上下文的线程的切换导致总时间更差。
+（但是并发高是实实在在的，比如可以同时接受到请求就变多了。）
+（还有一点是多线程可以利用多核的能力，即并行的能力，这个也是实实在在的）</p>
+<p>所以总的来说多线程有什么好处呢？
+一个就是可以利用多核的能力，一个是对于io密集型的任务来说优势比较大。
+所以一般设置的线程数为2*cpu核心数。</p>
+<p>（2.2）既然cpu密集型的任务对总时间效果并不是很高，那为什么说go快呢？
+通过第一个，可以知道多线程确实是有好处的，那么go相对于多线程来说，可以复用多线程，
+不用频繁的销毁线程，在用户态进行任务的调用分配，是不是优势就更大了。</p>
+<p>那么既然io阻塞的时候会创建出新的线程，而其他的任务如果是cpu密集型的话又没有什么优势的话，那么还需要这么一个goroutine有什么用？
+这个恰恰正是goroutine的作用，io阻塞的时候，创建新的线程去承接processor去执行任务，
+也就是说将一些cpu密集型的任务用p的队列放到一起来了，排队执行，
+而不是每一个cpu密集型的任务都创建出一个线程出来，因为没有必要，最多创建出cpu核心数个线程就够了。
+其他的么放在用户态的队列里排队就好了。。。。</p>
+<p>（3）为什么要有p，即gm模型有什么问题？？？
+gm模型是由m直接去调度g的，会有一个g的全局队列，
+m和g是M:N的关系，不同的m通过锁去请求g队列获取g运行，当m上的g产生了新的g1，
+这个时候，m需要将g1放到全局队列中去，这个时候很有可能新产生的g会被其他的m所运行。
+从上面可以看出gm模型会有如下几个问题：
+（3.1）全局锁会导致性能瓶颈，所有的m都依赖于这个锁，并发量高的时候会产生严重的锁竞争
+（3.2）g1由g产生，有很多的数据栈和g是相同的，放到同一个线程m下执行会更好一些，对于资源的利用率也更高一些，放到其他的线程上执行的话需要复制g的栈空间。</p>
+<p>（4）既然gm模型有这些问题，那么gmp又是怎么来避免的呢？
+没有什么不是加一层中间层不能解决的，在go1.1之后，Dmitry Vyukov对go调度器进行了重新的设计，加入了中间层p层。
+和gm模型的不同点在于：
+（4.1）goroutine很少依赖全局的goroutine队列，而是用processor的goroutine队列
+（4.2）processor和m关联，m需要运行某个任务的时候从p中获取，这样就不会存在多个m去竞争同一把锁的情况了，
+因为会有多个processor，而且分配p是由processor进行的。
+（4.3）p和m并不是绑定的，当m被阻塞的话，m会通过detach和p分离（hand off机制），让p关联到其他空闲的m或者是新增的m上。
+（4.4）p的队列并不是不变的，会存在work stealing机制，当前p中没有任务的话，就会从其他的p中偷一半过来执行</p>
+<p>（5）可以看到gmp很多调度功能通过p这个中间层来实现了，那么问题来了：p可以直接通过m来实现吗？
+答：m是和实际的线程相关的，会有很多，go的最大上限是10k，那么p也需要这么多吗？
+实际是不需要的，正在调度执行的任务最多只有cpu核心数个，
+所以一般只需要将p的个数设置为核心数个就可以了。
+将p通过m来实现的话，会有很多p的产生，没有必要。
+如果不是每创建一个m就创建一个p的话，那其实就是现在的gmp模型。</p>
+<p>（6）g0和m0有什么作用
+g0是每一个m生成的时候会绑定一个g0，用于此m真正运行的时候执行调度，垃圾回收等工作。
+还有就是有一个runtime.g0, 用于执行引导程序，它运行在Go程序拥有的第一个内核线程中，
+和这个内核线程也被称为runtime.m0。m0 是 Go Runtime 所创建的第一个系统线程，一个 Go 进程只有一个 m0，也叫主线程。</p>
+<p>引导程序完成之后，m0就和普通的m一样了。</p>
+<p><a href="https://mp.weixin.qq.com/s/YK-TD3bZGEgqC0j-8U6VkQ">https://mp.weixin.qq.com/s/YK-TD3bZGEgqC0j-8U6VkQ</a></p>
+<p>（7）sysmon这些有什么作用？？</p>
+<p>sysmon(system monitor)，即为提供系统监控的线程，它在go运行的时候就起来了，
+而且它不与p进行绑定，也就是说sysmon这个线程并不会被调度，它是一直运行着的。
+其实调度本身就是在 g0 上运行的，所以肯定不会把自己调度走的。</p>
+<p>每个M启动都有一个叫g0的系统堆栈，runtime通常使用systemstack、mcall或asmcgocall临时切换到系统堆栈，以执行必须不被抢占的任务、不得增加用户堆栈的任务或切换用户goroutines。在系统堆栈上运行的代码隐式不可抢占，垃圾收集器不扫描系统堆栈。在系统堆栈上运行时，不会使用当前用户堆栈执行。
+（注意：g0在每个m上都有，但是并不会将其加入到p的队列中去，不会被调度走，用于当前线程的调度工作，垃圾回收工作等等）</p>
+<p><a href="https://gocn.vip/topics/10977">https://gocn.vip/topics/10977</a>
+<a href="https://zhuanlan.zhihu.com/p/330826502">https://zhuanlan.zhihu.com/p/330826502</a>
+<a href="https://draveness.me/golang/docs/part3-runtime/ch06-concurrency/golang-sysmon/">https://draveness.me/golang/docs/part3-runtime/ch06-concurrency/golang-sysmon/</a></p>
+<p>（8）那么sysmon和g0的关系？？？</p>
+<p>sysmon是g0上执行的程序，用于系统监控（gc，抢占式调度。。）</p>
+<p>（9）对gmp整个调度过程做一下介绍
+gmp主要有三个组件：
+m：代表了真正执行线程的对象，每一个m最终都会落到一个具体的线程。
+p：processor，处理器，维护了一个goroutine队列，用于m的调度
+g：goroutine，代表了一段go代码片段，由g结构体封装</p>
+<p>首先：
+1、m与p关联，p上会挂载一个goroutine队列，m创建的时候会有一个协程g0，g0用于执行sysmon任务，比如gc/调度/抢占等。
+然后g0就会从队列里取goroutine用m进行实际的运行，运行一会之后会被调度走，运行其他的goroutine任务。</p>
+<p>2、没有足够的m和p关联的时候，会创建出新的m。</p>
+<p>3、work steal，当前的m对应p里的goroutine列表没有的时候，m就会先尝试从全局队列中获取一批g放到p的本地队列当中，若全局队列也没有可运行的g的时候，m会随机从别的队列里头偷一半go routine放到自己的本地p的队列当中。</p>
+<p>4、hand off
+当m所运行的g发生系统调用产生阻塞的话，会将自身和p进行分离detach，让p可以挂载到其他空闲的m上运行。</p>
+<p><a href="https://www.cyub.vip/2020/08/29/Golang%E5%B9%B6%E5%8F%91%E8%B0%83%E5%BA%A6%E7%9A%84GMP%E6%A8%A1%E5%9E%8B/">https://www.cyub.vip/2020/08/29/Golang%E5%B9%B6%E5%8F%91%E8%B0%83%E5%BA%A6%E7%9A%84GMP%E6%A8%A1%E5%9E%8B/</a></p>
+<p>（10）调度过程中的阻塞都会产生hand off吗？
+不是，阻塞分为用户态阻塞和系统调用阻塞，用户态阻塞不会影响线程的调用，调度器这边就可以解决的，将其放回到队列中，先去执行别的g。</p>
+<p>GMP模型的阻塞可能发生在下面几种情况：
+I/O，select
+block on syscall
+channel
+等待锁
+runtime.Gosched()</p>
+<p>（10.1）用户态阻塞
+当goroutine因为channel操作或者network I/O而阻塞时（实际上golang已经用netpoller实现了goroutine网络I/O阻塞不会导致M被阻塞，仅阻塞G），对应的G会被放置到某个wait队列(如channel的waitq)，该G的状态由_Gruning变为_Gwaitting，而M会跳过该G尝试获取并执行下一个G，如果此时没有runnable的G供M运行，那么M将解绑P，并进入sleep状态；当阻塞的G被另一端的G2唤醒时（比如channel的可读/写通知），G被标记为runnable，尝试加入G2所在P的runnext，然后再是P的Local队列和Global队列。</p>
+<p>（10.2）系统调用阻塞
+当G被阻塞在某个系统调用上时，此时G会阻塞在_Gsyscall状态，M也处于 block on syscall 状态，此时的M可被抢占调度：执行该G的M会与P解绑，而P则尝试与其它idle的M绑定，继续执行其它G。如果没有其它idle的M，但P的Local队列中仍然有G需要执行，则创建一个新的M；当系统调用完成后，G会重新尝试获取一个idle的P进入它的Local队列恢复执行，如果没有idle的P，G会被标记为runnable加入到Global队列。</p>
+<h3 id="1gmp模型介绍">1、GMP模型介绍</h3>
+<p>部署应用的时候查看日志频繁出现如下的日志打印：</p>
+<p><a href="https://www.cyub.vip/2020/08/29/Golang%E5%B9%B6%E5%8F%91%E8%B0%83%E5%BA%A6%E7%9A%84GMP%E6%A8%A1%E5%9E%8B/">https://www.cyub.vip/2020/08/29/Golang%E5%B9%B6%E5%8F%91%E8%B0%83%E5%BA%A6%E7%9A%84GMP%E6%A8%A1%E5%9E%8B/</a></p>
+<p>参考文章：</p>
+<p>线程/协程参考
+<a href="https://developer.51cto.com/art/202012/634647.htm">https://developer.51cto.com/art/202012/634647.htm</a>
+<a href="https://blog.csdn.net/zollty/article/details/53944539">https://blog.csdn.net/zollty/article/details/53944539</a>
+<a href="https://zhuanlan.zhihu.com/p/111346689">https://zhuanlan.zhihu.com/p/111346689</a>
+<a href="https://learnku.com/articles/41728">https://learnku.com/articles/41728</a>
+<a href="https://mp.weixin.qq.com/s/RR3ducI2gK7JuLAzeILRzg">https://mp.weixin.qq.com/s/RR3ducI2gK7JuLAzeILRzg</a>
+<a href="https://mp.weixin.qq.com/s/an7dml9NLOhqOZjEGLdEEw">https://mp.weixin.qq.com/s/an7dml9NLOhqOZjEGLdEEw</a>
+<a href="https://mp.weixin.qq.com/s/Yr4L2pt-__CK7Q7JVz_guw">https://mp.weixin.qq.com/s/Yr4L2pt-__CK7Q7JVz_guw</a></p>
+</div>
+        <div class="post-footer">
+            <div class="info">
+                <span class="separator"><a class="category" href="/categories/%E5%B9%B6%E5%8F%91/">并发</a></span>
+                <span class="separator"><a class="tag" href="/tags/go/">go</a><a class="tag" href="/tags/concurrency/">concurrency</a></span>
+            </div>
+        </div>
+
+        
+    </div>
+
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript"
+        src="/js/medium-zoom.min.2d6fd0be87fa98f0c9b4dc2536b312bbca48757f584f6ea1f394abc9bcc38fbc.js"
+        integrity="sha256-LW/Qvof6mPDJtNwlNrMSu8pIdX9YT26h85SrybzDj7w="
+        crossorigin="anonymous"></script></body>
+
+</html>

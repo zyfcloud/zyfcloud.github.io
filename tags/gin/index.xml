@@ -9,10 +9,10 @@
     <lastBuildDate>Sun, 05 May 2019 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/tags/gin/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>golang:gin和net/http</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-web-gin/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/gin/go-web-gin/</link>
       <pubDate>Sun, 05 May 2019 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-web-gin/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/gin/go-web-gin/</guid>
       <description>gin，beego等web框架底层都用的是net/http模块，接上一篇文章，本文就gin怎么用net/http起web服务进行梳理。</description>
     </item>
     

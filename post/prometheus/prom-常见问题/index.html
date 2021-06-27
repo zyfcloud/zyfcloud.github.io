@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html  dir="ltr" lang="en" data-theme=""><head>
+    <title> zyfcloud | prometheus底层存储 </title>
+
+    
+    <meta charset="utf-8"><meta name="generator" content="Hugo 0.81.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="description" content="本文介绍几种prometheus的底层存储">
+    
+    
+    
+    <link rel="stylesheet"
+        href="/css/style.min.51d7ec6db610dce512b735d5315f963c278042d026aa4ebe05a9355460b49016.css"
+        integrity="sha256-UdfsbbYQ3OUStzXVMV&#43;WPCeAQtAmqk6&#43;Bak1VGC0kBY="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    
+    <link rel="stylesheet"
+        href="/css/markupHighlight.min.f798cbda9aaa38f89eb38be6414bd082cfd71a6780375cbf67b6d2fb2b96491e.css"
+        integrity="sha256-95jL2pqqOPies4vmQUvQgs/XGmeAN1y/Z7bS&#43;yuWSR4="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    <link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" 
+    integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" 
+    crossorigin="anonymous" />
+
+    
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+    <link rel="canonical" href="/post/prometheus/prom-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/">
+
+    
+    
+    
+    
+    <script type="text/javascript"
+            src="/js/anatole-header.min.0c05c0a90d28c968a1cad4fb31abd0b8e1264e788ccefed022ae1d3b6f627514.js"
+            integrity="sha256-DAXAqQ0oyWihytT7MavQuOEmTniMzv7QIq4dO29idRQ="
+            crossorigin="anonymous"></script>
+
+
+    
+        
+        
+        <script type="text/javascript"
+                src="/js/anatole-theme-switcher.min.7fd87181cdd7e8413aa64b6867bb32f3a8dc242e684fc7d5bbb9f600dbc2b6eb.js"
+                integrity="sha256-f9hxgc3X6EE6pktoZ7sy86jcJC5oT8fVu7n2ANvCtus="
+                crossorigin="anonymous"></script>
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="prometheus底层存储"/>
+<meta name="twitter:description" content="本文介绍几种prometheus的底层存储"/>
+
+
+    
+
+</head>
+<body><div class="sidebar animated fadeInDown ">
+    <div class="logo-title">
+        <div class="title">
+            <img src="/images/profile.png" alt="profile picture">
+            <h3 title=""><a href="/">ZYF-CLOUD</a></h3>
+            <div class="description">
+                <p>some sharing</p>
+            </div>
+        </div>
+    </div>
+    <ul class="social-links">
+        
+    </ul>
+    <div class="footer">
+        <div class="by_farbox">&copy; zyfcloud  2021 </div>
+    </div>
+</div>
+<div class="main">
+    <div class="page-top  animated fadeInDown ">
+    <a role="button" class="navbar-burger" data-target="navMenu" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+    </a>
+    <ul class="nav" id="navMenu">
+        
+        
+            
+            <li><a 
+                   href="/"
+                        
+                   title="">Home</a></li>
+        
+            
+            <li><a 
+                   href="/post/"
+                        
+                   title="">Posts</a></li>
+        
+            
+            <li><a 
+                   href="/about/"
+                        
+                   title="">About</a></li>
+        
+        
+        
+            <li class="theme-switch-item">
+                <a class="theme-switch" title="Switch Theme">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+    <div class="autopagerize_page_element">
+        <div class="content">
+    <div class="post  animated fadeInDown ">
+        <div class="post-content">
+            
+            <div class="post-title">
+                <h3>prometheus底层存储</h3>
+                
+                    <div class="info">
+                        <em class="fas fa-calendar-day"></em>
+                        <span class="date"> Wed, May 5, 2021 
+                                           </span>
+                        <em class="fas fa-stopwatch"></em>
+                        <span class="reading-time">One-minute read</span>
+                    </div>
+                
+            </div>
+
+            <p>本文介绍prometheus底层存储</p>
+<p>首先抛出几个问题：</p>
+<p>（1）prometheus的局限性：
+（1）不适用日志、事件类型的采集
+（2）pull的方式，会有时延
+（3）缺少自己官方的高可用架构
+（4）查询时间范围过长的时候数据会降采样
+（2）prometheus大内存问题：
+内存消耗主要在：
+（1）:每两个小时落盘一次，之前数据都在内存当中，所以两个小时内的数据过大的话就会导致内存占用很大
+（2）:加载历史数据时，是从磁盘到内存的，查询范围越大，内存越大。这里面有一定的优化空间。
+内存不够的时候怎么办呢？
+（1）增加内存
+（2）增加采样时间间隔
+（3）Prometheus 重启慢与热加载
+重启的时候由于要从wal文件回放到内存中，所以会导致重启的时候很慢。</p>
+<p>（4）prometheus遇到的坑
+（1）陈旧性问题：</p>
+<pre><code>    陈旧性解释：
+        就是当采样目标消失了，比如pod被删除了，此时从prometheus查询的时候发现其实还是可以查询到数据的。
+        （v2.x版本之后两种情况会查询到：avg/联邦方式）。过了一段时间（默认是五分钟）之后prometheus才会将其标记为staleness陈旧状态，在这之前prometheus将会返回五分钟内的最新数据。
+
+    目的：
+        为了不同的目标采集的时间对齐，比如pushGateWay方式，联邦方式（数据带时间戳）。
+
+    问题：
+        会导致报警触发阈值的时间拉长了，比如应用发布的时候pod状态not running的时间，按照正常的发布很快就被删除了，并不会触发我们设置的持续时间，但是因为对staleness的处理方式，所以出问题的时间就会拉长
+
+    解决方式：
+        （1）配置标记为staleness的时间，15s采样的话，一两分钟就够了。
+        （2）报警的持续时间设置稍微长一些，比如我想设置为持续五分钟就报警，query-delta=2m，那么就可以设置成7m
+
+（2）拿不到恢复值：
+        需求：业务方想要拿到报警恢复的时候的恢复值
+        解决：通过源码分析，发现拿不到恢复值的。
+</code></pre>
+</div>
+        <div class="post-footer">
+            <div class="info">
+                <span class="separator"><a class="category" href="/categories/%E5%AD%98%E5%82%A8/">存储</a></span>
+                <span class="separator"><a class="tag" href="/tags/prometheus/">prometheus</a><a class="tag" href="/tags/tsdb/">tsdb</a></span>
+            </div>
+        </div>
+
+        
+    </div>
+
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript"
+        src="/js/medium-zoom.min.2d6fd0be87fa98f0c9b4dc2536b312bbca48757f584f6ea1f394abc9bcc38fbc.js"
+        integrity="sha256-LW/Qvof6mPDJtNwlNrMSu8pIdX9YT26h85SrybzDj7w="
+        crossorigin="anonymous"></script></body>
+
+</html>

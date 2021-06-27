@@ -9,181 +9,181 @@
     <lastBuildDate>Sun, 30 May 2021 17:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>本文介绍go基础类型chan的原理</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-base-channel/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/base/go-base-channel/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-base-channel/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/base/go-base-channel/</guid>
       <description>本文介绍go基础类型chan的原理（比较乱，仅用于自己的知识整理）</description>
     </item>
     
     <item>
       <title>本文介绍go基础类型map的原理</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-base-map/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/base/go-base-map/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-base-map/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/base/go-base-map/</guid>
       <description>本文介绍go基础类型map的原理（比较乱，仅用于自己的知识整理）</description>
     </item>
     
     <item>
       <title>本文介绍go基础类型slice的原理</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-base-slice/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/base/go-base-slice/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-base-slice/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/base/go-base-slice/</guid>
       <description>本文介绍go基础类型slice的原理（比较乱，仅用于自己的知识整理）</description>
     </item>
     
     <item>
       <title>本文介绍go的gc相关知识</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-gc/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/memory/go-gc/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-gc/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/memory/go-gc/</guid>
       <description>本文介绍go的gc相关知识（比较乱，仅用于自己的知识整理）</description>
     </item>
     
     <item>
       <title>本文介绍go线程池的简单实现</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-concurrency/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/concurrency/go-concurrency/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-concurrency/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/concurrency/go-concurrency/</guid>
       <description>本文介绍go线程池的简单实现</description>
     </item>
     
     <item>
       <title>本文介绍go调度模型gmp调度模型</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-gmp%E6%A8%A1%E5%9E%8B/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/gmp/go-gmp%E6%A8%A1%E5%9E%8B/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-gmp%E6%A8%A1%E5%9E%8B/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/gmp/go-gmp%E6%A8%A1%E5%9E%8B/</guid>
       <description>本文介绍go调度模型gmp调度模型（比较乱，仅用于自己的知识整理）</description>
     </item>
     
     <item>
       <title>记一次go踩坑——go版本和内核冲突</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-bug/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/bug/go-bug/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-bug/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/bug/go-bug/</guid>
       <description>本文介绍一次go使用踩坑的过程</description>
     </item>
     
     <item>
       <title>alertmanager代码架构</title>
-      <link>https://zhuyunfeng111.github.io/post/prom-alertmanger%E6%BA%90%E7%A0%81/</link>
+      <link>https://zhuyunfeng111.github.io/post/prometheus/prom-alertmanger%E6%BA%90%E7%A0%81/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/prom-alertmanger%E6%BA%90%E7%A0%81/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/prometheus/prom-alertmanger%E6%BA%90%E7%A0%81/</guid>
       <description>本文通过代码分析alertmanager的架构</description>
     </item>
     
     <item>
       <title>prometheus底层存储</title>
-      <link>https://zhuyunfeng111.github.io/post/prom-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/</link>
+      <link>https://zhuyunfeng111.github.io/post/prometheus/prom-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/prom-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/prometheus/prom-%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98/</guid>
       <description>本文介绍prometheus底层存储</description>
     </item>
     
     <item>
       <title>prometheus底层存储</title>
-      <link>https://zhuyunfeng111.github.io/post/prom-%E5%BA%95%E5%B1%82%E5%AD%98%E5%82%A8/</link>
+      <link>https://zhuyunfeng111.github.io/post/prometheus/prom-%E5%BA%95%E5%B1%82%E5%AD%98%E5%82%A8/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/prom-%E5%BA%95%E5%B1%82%E5%AD%98%E5%82%A8/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/prometheus/prom-%E5%BA%95%E5%B1%82%E5%AD%98%E5%82%A8/</guid>
       <description>本文介绍prometheus底层存储</description>
     </item>
     
     <item>
       <title>prometheus恢复机制</title>
-      <link>https://zhuyunfeng111.github.io/post/prom-resolved/</link>
+      <link>https://zhuyunfeng111.github.io/post/prometheus/prom-resolved/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/prom-resolved/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/prometheus/prom-resolved/</guid>
       <description>本文介绍prometheus的恢复机制</description>
     </item>
     
     <item>
       <title>prometheus陈旧性</title>
-      <link>https://zhuyunfeng111.github.io/post/prom-staleness/</link>
+      <link>https://zhuyunfeng111.github.io/post/prometheus/prom-staleness/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/prom-staleness/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/prometheus/prom-staleness/</guid>
       <description>本文介绍prometheus的陈旧性机制</description>
     </item>
     
     <item>
       <title>prometheus高可用架构</title>
-      <link>https://zhuyunfeng111.github.io/post/prom-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/</link>
+      <link>https://zhuyunfeng111.github.io/post/prometheus/prom-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/prom-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/prometheus/prom-%E9%AB%98%E5%8F%AF%E7%94%A8%E6%9E%B6%E6%9E%84/</guid>
       <description>本文介绍几种prometheus的高可用架构</description>
     </item>
     
     <item>
       <title>基于prometheus的监控系统设计</title>
-      <link>https://zhuyunfeng111.github.io/post/prom-%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/</link>
+      <link>https://zhuyunfeng111.github.io/post/prometheus/prom-%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/prom-%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/prometheus/prom-%E7%9B%91%E6%8E%A7%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/</guid>
       <description>本文介绍基于prometheus的监控系统设计</description>
     </item>
     
     <item>
       <title>k8s:controller开发(1)</title>
-      <link>https://zhuyunfeng111.github.io/post/k8s-controller1/</link>
+      <link>https://zhuyunfeng111.github.io/post/k8s/k8s-controller1/</link>
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/k8s-controller1/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/k8s/k8s-controller1/</guid>
       <description>本文介绍controller中infomer启动的基本流程</description>
     </item>
     
     <item>
       <title>k8s:controller开发(2)</title>
-      <link>https://zhuyunfeng111.github.io/post/k8s-controller2/</link>
+      <link>https://zhuyunfeng111.github.io/post/k8s/k8s-controller2/</link>
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/k8s-controller2/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/k8s/k8s-controller2/</guid>
       <description>本文介绍controller中infomer启动之后，自己的controller逻辑的实现</description>
     </item>
     
     <item>
       <title>k8s:深入解析Kubebuilder</title>
-      <link>https://zhuyunfeng111.github.io/post/k8s-crd/</link>
+      <link>https://zhuyunfeng111.github.io/post/k8s/k8s-crd/</link>
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/k8s-crd/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/k8s/k8s-crd/</guid>
       <description>本文不对kubebuidler的使用做分析，主要对kubebuiler的生成的模板代码进行分析。</description>
     </item>
     
     <item>
       <title>golang:gin和net/http</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-web-gin/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/gin/go-web-gin/</link>
       <pubDate>Sun, 05 May 2019 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-web-gin/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/gin/go-web-gin/</guid>
       <description>gin，beego等web框架底层都用的是net/http模块，接上一篇文章，本文就gin怎么用net/http起web服务进行梳理。</description>
     </item>
     
     <item>
       <title>golang:net/http之web服务源码分析</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-web-http/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/gin/go-web-http/</link>
       <pubDate>Sun, 05 May 2019 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-web-http/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/gin/go-web-http/</guid>
       <description>本文对go利用net/http包起一个最基本http服务的代码进行分析</description>
     </item>
     
     <item>
       <title></title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-sync-map%E5%88%86%E6%9E%90/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/base/go-sync-map/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-sync-map%E5%88%86%E6%9E%90/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/base/go-sync-map/</guid>
       <description></description>
     </item>
     

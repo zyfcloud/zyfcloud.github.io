@@ -9,10 +9,10 @@
     <lastBuildDate>Sun, 30 May 2021 17:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/categories/map/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>本文介绍go基础类型map的原理</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-base-map/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/base/go-base-map/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-base-map/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/base/go-base-map/</guid>
       <description>本文介绍go基础类型map的原理（比较乱，仅用于自己的知识整理）</description>
     </item>
     

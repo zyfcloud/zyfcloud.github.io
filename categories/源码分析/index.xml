@@ -9,64 +9,64 @@
     <lastBuildDate>Wed, 05 May 2021 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/categories/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>alertmanager代码架构</title>
-      <link>https://zhuyunfeng111.github.io/post/prom-alertmanger%E6%BA%90%E7%A0%81/</link>
+      <link>https://zhuyunfeng111.github.io/post/prometheus/prom-alertmanger%E6%BA%90%E7%A0%81/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/prom-alertmanger%E6%BA%90%E7%A0%81/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/prometheus/prom-alertmanger%E6%BA%90%E7%A0%81/</guid>
       <description>本文通过代码分析alertmanager的架构</description>
     </item>
     
     <item>
       <title>prometheus恢复机制</title>
-      <link>https://zhuyunfeng111.github.io/post/prom-resolved/</link>
+      <link>https://zhuyunfeng111.github.io/post/prometheus/prom-resolved/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/prom-resolved/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/prometheus/prom-resolved/</guid>
       <description>本文介绍prometheus的恢复机制</description>
     </item>
     
     <item>
       <title>k8s:controller开发(1)</title>
-      <link>https://zhuyunfeng111.github.io/post/k8s-controller1/</link>
+      <link>https://zhuyunfeng111.github.io/post/k8s/k8s-controller1/</link>
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/k8s-controller1/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/k8s/k8s-controller1/</guid>
       <description>本文介绍controller中infomer启动的基本流程</description>
     </item>
     
     <item>
       <title>k8s:controller开发(2)</title>
-      <link>https://zhuyunfeng111.github.io/post/k8s-controller2/</link>
+      <link>https://zhuyunfeng111.github.io/post/k8s/k8s-controller2/</link>
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/k8s-controller2/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/k8s/k8s-controller2/</guid>
       <description>本文介绍controller中infomer启动之后，自己的controller逻辑的实现</description>
     </item>
     
     <item>
       <title>k8s:深入解析Kubebuilder</title>
-      <link>https://zhuyunfeng111.github.io/post/k8s-crd/</link>
+      <link>https://zhuyunfeng111.github.io/post/k8s/k8s-crd/</link>
       <pubDate>Tue, 05 May 2020 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/k8s-crd/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/k8s/k8s-crd/</guid>
       <description>本文不对kubebuidler的使用做分析，主要对kubebuiler的生成的模板代码进行分析。</description>
     </item>
     
     <item>
       <title>golang:gin和net/http</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-web-gin/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/gin/go-web-gin/</link>
       <pubDate>Sun, 05 May 2019 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-web-gin/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/gin/go-web-gin/</guid>
       <description>gin，beego等web框架底层都用的是net/http模块，接上一篇文章，本文就gin怎么用net/http起web服务进行梳理。</description>
     </item>
     
     <item>
       <title>golang:net/http之web服务源码分析</title>
-      <link>https://zhuyunfeng111.github.io/post/go/go-web-http/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/gin/go-web-http/</link>
       <pubDate>Sun, 05 May 2019 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go/go-web-http/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/gin/go-web-http/</guid>
       <description>本文对go利用net/http包起一个最基本http服务的代码进行分析</description>
     </item>
     

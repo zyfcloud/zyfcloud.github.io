@@ -9,10 +9,10 @@
     <lastBuildDate>Wed, 05 May 2021 16:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/categories/%E5%8A%9F%E8%83%BD%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>prometheus陈旧性</title>
-      <link>https://zhuyunfeng111.github.io/post/prom-staleness/</link>
+      <link>https://zhuyunfeng111.github.io/post/prometheus/prom-staleness/</link>
       <pubDate>Wed, 05 May 2021 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/prom-staleness/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/prometheus/prom-staleness/</guid>
       <description>本文介绍prometheus的陈旧性机制</description>
     </item>
     
