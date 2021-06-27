@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html  dir="ltr" lang="en" data-theme=""><head>
+    <title> zyfcloud | 本文介绍go的gc相关知识 </title>
+
+    
+    <meta charset="utf-8"><meta name="generator" content="Hugo 0.81.0" /><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="description" content="本文介绍go的gc相关知识">
+    
+    
+    
+    <link rel="stylesheet"
+        href="/css/style.min.51d7ec6db610dce512b735d5315f963c278042d026aa4ebe05a9355460b49016.css"
+        integrity="sha256-UdfsbbYQ3OUStzXVMV&#43;WPCeAQtAmqk6&#43;Bak1VGC0kBY="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    
+    <link rel="stylesheet"
+        href="/css/markupHighlight.min.f798cbda9aaa38f89eb38be6414bd082cfd71a6780375cbf67b6d2fb2b96491e.css"
+        integrity="sha256-95jL2pqqOPies4vmQUvQgs/XGmeAN1y/Z7bS&#43;yuWSR4="
+        crossorigin="anonymous"
+        type="text/css">
+    
+    <link rel="stylesheet" 
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" 
+    integrity="sha512-+4zCK9k+qNFUR5X+cKL9EIR+ZOhtIloNl9GIKS57V1MyNsYpYcUrUeQc9vNfzsWfV28IaLL3i96P9sdNyeRssA==" 
+    crossorigin="anonymous" />
+
+    
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+
+    <link rel="canonical" href="/post/go/go-gc/">
+
+    
+    
+    
+    
+    <script type="text/javascript"
+            src="/js/anatole-header.min.0c05c0a90d28c968a1cad4fb31abd0b8e1264e788ccefed022ae1d3b6f627514.js"
+            integrity="sha256-DAXAqQ0oyWihytT7MavQuOEmTniMzv7QIq4dO29idRQ="
+            crossorigin="anonymous"></script>
+
+
+    
+        
+        
+        <script type="text/javascript"
+                src="/js/anatole-theme-switcher.min.7fd87181cdd7e8413aa64b6867bb32f3a8dc242e684fc7d5bbb9f600dbc2b6eb.js"
+                integrity="sha256-f9hxgc3X6EE6pktoZ7sy86jcJC5oT8fVu7n2ANvCtus="
+                crossorigin="anonymous"></script>
+    
+    <meta name="twitter:card" content="summary"/>
+<meta name="twitter:title" content="本文介绍go的gc相关知识"/>
+<meta name="twitter:description" content="本文介绍go的gc相关知识"/>
+
+
+    
+
+</head>
+<body><div class="sidebar animated fadeInDown ">
+    <div class="logo-title">
+        <div class="title">
+            <img src="/images/profile.png" alt="profile picture">
+            <h3 title=""><a href="/">ZYF-CLOUD</a></h3>
+            <div class="description">
+                <p>some sharing</p>
+            </div>
+        </div>
+    </div>
+    <ul class="social-links">
+        
+    </ul>
+    <div class="footer">
+        <div class="by_farbox">&copy; zyfcloud  2021 </div>
+    </div>
+</div>
+<div class="main">
+    <div class="page-top  animated fadeInDown ">
+    <a role="button" class="navbar-burger" data-target="navMenu" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+    </a>
+    <ul class="nav" id="navMenu">
+        
+        
+            
+            <li><a 
+                   href="/"
+                        
+                   title="">Home</a></li>
+        
+            
+            <li><a 
+                   href="/post/"
+                        
+                   title="">Posts</a></li>
+        
+            
+            <li><a 
+                   href="/about/"
+                        
+                   title="">About</a></li>
+        
+        
+        
+            <li class="theme-switch-item">
+                <a class="theme-switch" title="Switch Theme">
+                    <i class="fas fa-adjust fa-fw" aria-hidden="true"></i>
+                </a>
+            </li>
+        
+    </ul>
+</div>
+
+    <div class="autopagerize_page_element">
+        <div class="content">
+    <div class="post  animated fadeInDown ">
+        <div class="post-content">
+            
+            <div class="post-title">
+                <h3>本文介绍go的gc相关知识</h3>
+                
+                    <div class="info">
+                        <em class="fas fa-calendar-day"></em>
+                        <span class="date"> Sun, May 30, 2021 
+                                           </span>
+                        <em class="fas fa-stopwatch"></em>
+                        <span class="reading-time">One-minute read</span>
+                    </div>
+                
+            </div>
+
+            <p>本文介绍go的gc相关知识（比较乱，仅用于自己的知识整理）</p>
+<p>相关知识点：
+（1）演进：</p>
+<p>1.3之前用标记清除法，清除之前需要stw</p>
+<p>1.3版本分离了标记和清除的过程，标记的时候stw，清除开始的时候stw结束</p>
+<p>1.5之后开始使用三色标记法</p>
+<p>（2）大概介绍一下三色标记的过程：</p>
+<p>三色标记就是将对象分为三种颜色，黑白灰，</p>
+<p>首先最开始的颜色都是白色，然后从根对象开始扫描，扫到第一层的时候标记为灰色，然后接着扫描灰色的，</p>
+<p>扫到第二层的时候将第二层的标记为灰色的，同时将第一层标记为黑色，如果往复，直到没有灰色的，说明已经扫描完毕了。</p>
+<p>然后就只剩下白色的未被引用的对象了，将白色的清除。</p>
+<p>（4）上面的三色标记会有什么问题：</p>
+<p>主要就是会有黑色的引用了白色的对象，然后白色的对象没有被其他的灰色对象直接或者间接引用到，</p>
+<p>这个时候白色就扫不到了，最后白色就会被清除掉。</p>
+<p>其实会发生问题就是需要满足上面说的两个条件，缺少某一个都可以避免。</p>
+<p>分别对应了避免三色标记问题的两种方式：“强三色不变式”和“弱三色不变式”</p>
+<p>（5）三色标记和标记清除到底有什么区别？有什么好处？？</p>
+<p>通过黑白灰三色标记，就可以使用一些屏障技术来满足“强三色不变式”或者是“弱三色不变式”的方式来减少stw的时间。</p>
+<p>（6）可以解释一下什么是屏障机制，以及什么是强/弱三色不变式吗？</p>
+<p>强三色不变式：黑色不准引用白色的</p>
+<p>弱三色不变式：黑色可以引用白色的，但是白色需要被灰色直接或者间接的引用。</p>
+<p>屏障机制：分为几种屏障机制</p>
+<p>插入屏障：插入的时候如果黑色引用了白色的，那么就将白色的变为灰色的，再下一轮扫描的时候就会被扫描到了。
+缺点：由于栈的函数调用之类的比较频繁，所以加写屏障的话会对性能影响比较大，所以不会对栈加屏障。
+扫描完成的时候，会stw，然后一次性的扫描栈，看有没有引用到白色的对象，有的话将其标记为黑色。</p>
+<p>删除屏障：删除的时候当作其是被黑色引用了，将其标注为灰色，所以不管怎么样都需要等到下一次gc的时候才会被删除了。
+缺点：如果被删除的白色的其实并没有被黑色的引用，那么就会错过这一轮的gc，需要等到下一轮才会被gc。</p>
+<p>混合写屏障：就是插入屏障和删除屏障的结合</p>
+<p>（7）现在还会有stw吗？？
+有的，
+（1）在任务开启的时候需要扫描整个根对象，这个阶段会开始屏障功能。</p>
+<p>（2）由于对栈上指针的写入添加写屏障的功能成本很高，所以go仅对堆上加写屏障功能，扫描结束之后再对栈进行一次性的扫描，这个时候需要stw。大约在10-100ms。</p>
+<p>不过在1.8之后会有混合写屏障，这个时候不会有rescan了。
+但是还是会有stw，为什么呢？？？？具体看混合写屏障。。。。。</p>
+<p>（8）什么时候会触发gc？</p>
+<p>（8.1）手动gc （8.2）申请内存的时候，检测当前已分配的内存是否大于上次gc之后剩余的内存的两倍，若是则触发</p>
+<p>（8.3）sysmon线程会检测上次gc的时间是否超过了两分钟，超过就会进行forcegc（比如这个issue上提到的：https://github.com/golang/go/issues/12026）</p>
+<p>（8）现在的整个gc的步骤：
+<img src="/images/GC-Algorithm-Phases.png" alt="avatar"></p>
+<p>主要分为四个步骤：
+(1)、stw&ndash;&gt;write barrier（开启写屏障）
+（2）、marking标记
+（3）、Mark Termination（因为混合写屏障的逻辑会重新扫描部分的根对象，不会rescan整个栈空间，但还是要求stw），结束之后关闭写屏障
+（4）、sweep</p>
+<p>（9）为什么1.8之前需要rescaen栈空间，栈不是会自动回收的吗？为什么要扫描栈？
+因为栈会引用到堆上的数据，如果堆上的数据被标记为白色，但是被栈上的对象引用了，这个时候就会导致堆上的对象被误删。所以需要扫描栈的引用关系，如果引用了堆上的对象，这个堆上的对象就会被标记为黑色。
+但是在1.8之后引入了混合写屏障机制，就不用重新rescan了。
+具体可见刘丹冰的适配。</p>
+<p>参考：</p>
+<p><a href="https://draveness.me/golang/docs/part3-runtime/ch07-memory/golang-memory-allocator/">https://draveness.me/golang/docs/part3-runtime/ch07-memory/golang-memory-allocator/</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/74853110">https://zhuanlan.zhihu.com/p/74853110</a></p>
+<p><a href="https://www.cnblogs.com/fanzou/p/13503974.html?ivk_sa=1024320u">https://www.cnblogs.com/fanzou/p/13503974.html?ivk_sa=1024320u</a></p>
+<p><a href="https://www.bilibili.com/video/BV1wz4y1y7Kd?p=10&amp;spm_id_from=pageDriver">https://www.bilibili.com/video/BV1wz4y1y7Kd?p=10&amp;spm_id_from=pageDriver</a></p>
+<p><a href="https://blog.csdn.net/weixin_42282999/article/details/106689805">https://blog.csdn.net/weixin_42282999/article/details/106689805</a></p>
+<p><a href="https://zhuanlan.zhihu.com/p/264789260">https://zhuanlan.zhihu.com/p/264789260</a></p>
+<p><a href="https://www.cnblogs.com/fanzou/p/13503974.html?ivk_sa=1024320u">https://www.cnblogs.com/fanzou/p/13503974.html?ivk_sa=1024320u</a></p>
+</div>
+        <div class="post-footer">
+            <div class="info">
+                <span class="separator"><a class="category" href="/categories/gc/">gc</a></span>
+                <span class="separator"><a class="tag" href="/tags/go/">go</a><a class="tag" href="/tags/gc/">gc</a></span>
+            </div>
+        </div>
+
+        
+    </div>
+
+
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript"
+        src="/js/medium-zoom.min.2d6fd0be87fa98f0c9b4dc2536b312bbca48757f584f6ea1f394abc9bcc38fbc.js"
+        integrity="sha256-LW/Qvof6mPDJtNwlNrMSu8pIdX9YT26h85SrybzDj7w="
+        crossorigin="anonymous"></script></body>
+
+</html>

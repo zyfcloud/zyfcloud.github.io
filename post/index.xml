@@ -9,64 +9,64 @@
     <lastBuildDate>Sun, 30 May 2021 17:30:13 +0800</lastBuildDate><atom:link href="https://zhuyunfeng111.github.io/post/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>本文介绍go基础类型chan的原理</title>
-      <link>https://zhuyunfeng111.github.io/post/go-base-channel/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/go-base-channel/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go-base-channel/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/go-base-channel/</guid>
       <description>本文介绍go基础类型chan的原理（比较乱，仅用于自己的知识整理）</description>
     </item>
     
     <item>
       <title>本文介绍go基础类型map的原理</title>
-      <link>https://zhuyunfeng111.github.io/post/go-base-map/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/go-base-map/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go-base-map/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/go-base-map/</guid>
       <description>本文介绍go基础类型map的原理（比较乱，仅用于自己的知识整理）</description>
     </item>
     
     <item>
       <title>本文介绍go基础类型slice的原理</title>
-      <link>https://zhuyunfeng111.github.io/post/go-base-slice/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/go-base-slice/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go-base-slice/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/go-base-slice/</guid>
       <description>本文介绍go基础类型slice的原理（比较乱，仅用于自己的知识整理）</description>
     </item>
     
     <item>
       <title>本文介绍go的gc相关知识</title>
-      <link>https://zhuyunfeng111.github.io/post/go-gc/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/go-gc/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go-gc/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/go-gc/</guid>
       <description>本文介绍go的gc相关知识（比较乱，仅用于自己的知识整理）</description>
     </item>
     
     <item>
       <title>本文介绍go线程池的简单实现</title>
-      <link>https://zhuyunfeng111.github.io/post/go-concurrency/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/go-concurrency/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go-concurrency/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/go-concurrency/</guid>
       <description>本文介绍go线程池的简单实现</description>
     </item>
     
     <item>
       <title>本文介绍go调度模型gmp调度模型</title>
-      <link>https://zhuyunfeng111.github.io/post/go-gmp%E6%A8%A1%E5%9E%8B/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/go-gmp%E6%A8%A1%E5%9E%8B/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go-gmp%E6%A8%A1%E5%9E%8B/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/go-gmp%E6%A8%A1%E5%9E%8B/</guid>
       <description>本文介绍go调度模型gmp调度模型（比较乱，仅用于自己的知识整理）</description>
     </item>
     
     <item>
       <title>记一次go踩坑——go版本和内核冲突</title>
-      <link>https://zhuyunfeng111.github.io/post/go-bug/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/go-bug/</link>
       <pubDate>Sun, 30 May 2021 17:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go-bug/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/go-bug/</guid>
       <description>本文介绍一次go使用踩坑的过程</description>
     </item>
     
@@ -162,28 +162,28 @@
     
     <item>
       <title>golang:gin和net/http</title>
-      <link>https://zhuyunfeng111.github.io/post/go-web-gin/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/go-web-gin/</link>
       <pubDate>Sun, 05 May 2019 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go-web-gin/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/go-web-gin/</guid>
       <description>gin，beego等web框架底层都用的是net/http模块，接上一篇文章，本文就gin怎么用net/http起web服务进行梳理。</description>
     </item>
     
     <item>
       <title>golang:net/http之web服务源码分析</title>
-      <link>https://zhuyunfeng111.github.io/post/go-web-http/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/go-web-http/</link>
       <pubDate>Sun, 05 May 2019 16:30:13 +0800</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go-web-http/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/go-web-http/</guid>
       <description>本文对go利用net/http包起一个最基本http服务的代码进行分析</description>
     </item>
     
     <item>
       <title></title>
-      <link>https://zhuyunfeng111.github.io/post/go-sync-map%E5%88%86%E6%9E%90/</link>
+      <link>https://zhuyunfeng111.github.io/post/go/go-sync-map%E5%88%86%E6%9E%90/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://zhuyunfeng111.github.io/post/go-sync-map%E5%88%86%E6%9E%90/</guid>
+      <guid>https://zhuyunfeng111.github.io/post/go/go-sync-map%E5%88%86%E6%9E%90/</guid>
       <description></description>
     </item>
     
